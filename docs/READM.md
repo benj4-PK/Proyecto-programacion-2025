@@ -1,0 +1,1 @@
+Estos es un juego simulando al sonic retro, proximamente con sprite hechos propiamente.
