@@ -21,7 +21,7 @@ suelo = pygame.Rect(-10000, 560, 120000, 1)
 
 # Variables de movimiento
 vel_y = 0.2
-gravedad = 0.2
+gravedad = 0.1
 en_suelo = False
 
 # Variable de cámara
