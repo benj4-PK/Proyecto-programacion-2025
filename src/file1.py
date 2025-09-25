@@ -28,7 +28,7 @@ suelo = pygame.Rect(-10000, 560, 120000, 100)
 vel_y = 0
 gravedad = 2500
 vel_salto = -1100
-vel_lateral = 600
+vel_lateral = 1000
 en_suelo = False
 
 # Variable de cámara
@@ -63,10 +63,11 @@ while running:
     vel_y += gravedad * dt
     sonic.y += vel_y * dt
 
-    # Colisión con el suelo
+    # Colisión con el suelo (siempre que esté tocando el suelo)
     if sonic.colliderect(suelo):
-        sonic.y = suelo.y - sonic.height
-        vel_y = 0
+        if vel_y > 0:
+            sonic.y = suelo.y - sonic.height
+            vel_y = 0
         en_suelo = True
     else:
         en_suelo = False
