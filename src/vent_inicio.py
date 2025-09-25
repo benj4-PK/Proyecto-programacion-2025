@@ -1,12 +1,16 @@
+import os
 import pygame
+
+# Cambia el directorio de trabajo al del script actual
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 pygame.init()
 
 # crear ventana
 screen = pygame.display.set_mode((1200, 700))
 pygame.display.set_caption("Menu Principal")
-pygame.display.set_icon(pygame.image.load("sprites/sprite_icono_prueba.png"))
-fondo = pygame.image.load("sprites/fondo_menu.png")
+pygame.display.set_icon(pygame.image.load("../sprites/sprite_icono_prueba.png"))
+fondo = pygame.image.load("../sprites/fondo_menu.png")
 fondo = pygame.transform.scale(fondo, (1200, 700))
 clock = pygame.time.Clock()
 
@@ -30,7 +34,7 @@ while running:
     #redirigir a la ventana del juego
     mouse_pos = pygame.mouse.get_pos()
     mouse_click = pygame.mouse.get_pressed()
-    if 550 <= mouse_pos[0] <= 650 and 300 <= mouse_pos[1] <= 350:
+    if 485 <= mouse_pos[0] <= 750 and 250 <= mouse_pos[1] <= 650:
         if mouse_click[0] == 1:  # Si se hace clic izquierdo
             import file1  # Importa la ventana del juego
             running = False  # Cierra la ventana del menú
