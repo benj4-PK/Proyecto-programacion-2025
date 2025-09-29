@@ -8,6 +8,13 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 # Iniciar Pygame
 pygame.init()
 
+fondo_day = pygame.image.load("../sprites/day.jpg")
+fondo_day = pygame.transform.scale(fondo_day, (1200, 700))
+fondo_midnight = pygame.image.load("../sprites/midnight.jpg")
+fondo_midnight = pygame.transform.scale(fondo_midnight, (1200, 700))
+fondo_night = pygame.image.load("../sprites/night.jpg")
+fondo_night = pygame.transform.scale(fondo_night, (1200, 700))
+
 # crear ventana
 screen = pygame.display.set_mode((1200, 700))
 pygame.display.set_caption("El veloz")
@@ -19,16 +26,16 @@ sprite_sonic = pygame.image.load("../sprites/sonic.png")
 sprite_sonic = pygame.transform.scale(sprite_sonic, (120, 120))
 
 # Definir personaje
-sonic = pygame.Rect(100, 550, 50, 50)
+sonic = pygame.Rect(100, 250 - 50, 50, 50)  # Sonic justo sobre el suelo
 
 # Definir suelo
-suelo = pygame.Rect(-10000, 560, 120000, 100)
+suelo = pygame.Rect(-10000, 280, 120000, 100)  # Suelo centrado verticalmente
 
 # Variables de movimiento
 vel_y = 0
 gravedad = 2500
 vel_salto = -1100
-vel_lateral = 1000
+vel_lateral = 1400
 en_suelo = False
 
 # Variable de cámara
@@ -73,13 +80,36 @@ while running:
         en_suelo = False
 
     # Actualizar cámara para centrar a Sonic
+    
     camera_x = sonic.x - 600
+    if sonic.x >= 5000:
+        camera_x = sonic.x - 600
+    if sonic.x >= 10000:
+        camera_x = sonic.x - 600
+    if sonic.x >= 15000:
+        camera_x = sonic.x - 600
+    if sonic.x > 4400:
+        camera_x = 4400 - 600
+    elif sonic.x > 9400:
+        camera_x = 8800 - 600
+    elif sonic.x > 14400:
+        camera_x = 13800 - 500
 
-    # Dibujo de fondo infinito
-    fondo_width = fondo.get_width()
+    # Seleccionar fondo según la posición de Sonic
+    if sonic.x < 5000:
+        fondo_actual = fondo_day
+    elif sonic.x < 10000:
+        fondo_actual = fondo_midnight
+    else:
+        fondo_actual = fondo_night
+        while sonic.x > 15000:
+            sonic.x -= 15000  # Teletransportar Sonic para evitar night always
+
+    # Dibujo de fondo infinito usando fondo_actual
+    fondo_width = fondo_actual.get_width()
     fondo_x = -camera_x % fondo_width
-    screen.blit(fondo, (fondo_x, 0))
-    screen.blit(fondo, (fondo_x - fondo_width, 0))
+    screen.blit(fondo_actual, (fondo_x, 0))
+    screen.blit(fondo_actual, (fondo_x - fondo_width, 0))
 
     # Suelo y Sonic desplazados por la cámara
     suelo_draw = suelo.move(-camera_x, 0)
