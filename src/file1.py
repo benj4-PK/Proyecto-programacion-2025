@@ -25,6 +25,10 @@ fondo = pygame.transform.scale(fondo, (1200, 700))
 sprite_sonic = pygame.image.load("../sprites/sonic.png")
 sprite_sonic = pygame.transform.scale(sprite_sonic, (120, 120))
 
+# Cargar imagen "eu_bata"
+sprite_eu_bata = pygame.image.load("../sprites/eu_bata.png")
+sprite_eu_bata = pygame.transform.scale(sprite_eu_bata, (400, 120))
+
 # Definir personaje
 sonic = pygame.Rect(100, 250 - 50, 50, 50)  # Sonic justo sobre el suelo
 
@@ -40,7 +44,8 @@ en_suelo = False
 
 # Variable de cámara
 camera_x = 0
-
+mostrar_bata = False
+tiempo_bata = 0
 clock = pygame.time.Clock()
 
 # Bucle principal del juego
@@ -58,9 +63,20 @@ while running:
     # Movimiento lateral
     keys = pygame.key.get_pressed()
     if keys[pygame.K_a]:
-        sonic.x -= int(vel_lateral * dt)
+        if sonic.x > -600:
+            sonic.x -= int(vel_lateral * dt)
+        else:
+            sonic.x = -600  # Bloquea en -600
+            # Mostrar "eu_bata" momentáneamente
+            if not mostrar_bata:
+                mostrar_bata = True
+                tiempo_bata = now
+
     if keys[pygame.K_d]:
         sonic.x += int(vel_lateral * dt)
+
+    # spindash papu
+   
 
     # Saltar
     if keys[pygame.K_w] and en_suelo:
@@ -82,26 +98,34 @@ while running:
     # Actualizar cámara para centrar a Sonic
     
     camera_x = sonic.x - 600
-    if sonic.x >= 5000:
-        camera_x = sonic.x - 600
-    if sonic.x >= 10000:
-        camera_x = sonic.x - 600
-    if sonic.x >= 15000:
-        camera_x = sonic.x - 600
+    
+    if sonic.x < 600:
+        camera_x = 0
     if sonic.x > 4400:
         camera_x = 4400 - 600
     elif sonic.x > 9400:
-        camera_x = 8800 - 600
+        camera_x = 9400 - 600
     elif sonic.x > 14400:
-        camera_x = 13800 - 500
+        camera_x = 14400 - 600
 
     # Seleccionar fondo según la posición de Sonic
     if sonic.x < 5000:
         fondo_actual = fondo_day
+        camera_x = sonic.x - 600
+        if sonic.x > 4400:
+            camera_x = 4400 - 600
+            if sonic.x < 100:
+                camera_x = 0
     elif sonic.x < 10000:
         fondo_actual = fondo_midnight
+        camera_x = sonic.x - 600
+        if sonic.x > 9400:
+            camera_x = 9400 - 600
     else:
         fondo_actual = fondo_night
+        camera_x = sonic.x - 600
+        if sonic.x > 14400:
+            camera_x = 14400 - 600
         while sonic.x > 15000:
             sonic.x -= 15000  # Teletransportar Sonic para evitar night always
 
@@ -115,6 +139,13 @@ while running:
     suelo_draw = suelo.move(-camera_x, 0)
     # pygame.draw.rect(screen, (0, 0, 0), suelo_draw)
     screen.blit(sprite_sonic, (sonic.x - camera_x, sonic.y))
+
+    # Mostrar "eu_bata" por 1 segundo si corresponde
+    if mostrar_bata:
+        screen.blit(sprite_eu_bata, (sonic.x - camera_x, sonic.y - 130))  # Arriba de Sonic
+        if now - tiempo_bata > 1:
+            mostrar_bata = False
+
     pygame.display.flip()
 
 pygame.quit()
