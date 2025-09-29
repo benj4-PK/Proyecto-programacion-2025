@@ -12,6 +12,8 @@ fondo_day = pygame.image.load("../sprites/day.jpg")
 fondo_day = pygame.transform.scale(fondo_day, (1200, 700))
 fondo_midnight = pygame.image.load("../sprites/midnight.jpg")
 fondo_midnight = pygame.transform.scale(fondo_midnight, (1200, 700))
+fondo_seminight =pygame.image.load("../sprites/casinoche.jpg")
+fondo_seminight = pygame.transform.scale(fondo_seminight, (1200, 700))
 fondo_night = pygame.image.load("../sprites/night.jpg")
 fondo_night = pygame.transform.scale(fondo_night, (1200, 700))
 
@@ -30,10 +32,11 @@ sprite_eu_bata = pygame.image.load("../sprites/eu_bata.png")
 sprite_eu_bata = pygame.transform.scale(sprite_eu_bata, (400, 120))
 
 # Definir personaje
-sonic = pygame.Rect(100, 250 - 50, 50, 50)  # Sonic justo sobre el suelo
+sonic = pygame.Rect(-599, 250 - 50, 50, 50)  # Sonic aparece en x = -599
 
 # Definir suelo
 suelo = pygame.Rect(-10000, 280, 120000, 100)  # Suelo centrado verticalmente
+
 
 # Variables de movimiento
 vel_y = 0
@@ -75,8 +78,13 @@ while running:
     if keys[pygame.K_d]:
         sonic.x += int(vel_lateral * dt)
 
-    # spindash papu
-   
+    # agacharse papu
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_s] and en_suelo:
+        sonic.height = 25
+        sonic.y = suelo.y - sonic.height
+    else:
+        sonic.height = 50
 
     # Saltar
     if keys[pygame.K_w] and en_suelo:
@@ -109,25 +117,35 @@ while running:
         camera_x = 14400 - 600
 
     # Seleccionar fondo según la posición de Sonic
+
     if sonic.x < 5000:
         fondo_actual = fondo_day
         camera_x = sonic.x - 600
         if sonic.x > 4400:
             camera_x = 4400 - 600
-            if sonic.x < 100:
+            if sonic.x < 0:
                 camera_x = 0
     elif sonic.x < 10000:
         fondo_actual = fondo_midnight
         camera_x = sonic.x - 600
         if sonic.x > 9400:
             camera_x = 9400 - 600
-    else:
-        fondo_actual = fondo_night
+    elif sonic.x < 15000:
+        fondo_actual = fondo_seminight
         camera_x = sonic.x - 600
         if sonic.x > 14400:
             camera_x = 14400 - 600
-        while sonic.x > 15000:
-            sonic.x -= 15000  # Teletransportar Sonic para evitar night always
+    else:
+        fondo_actual = fondo_night
+        camera_x = sonic.x - 600
+    if sonic.x > 19400:
+        camera_x = 19400 - 600
+        while sonic.x > 20000:
+            sonic.x -= 20000  # Teletransportar Sonic para evitar night always
+        
+    # camara al entrar a otro fondo
+    
+    
 
     # Dibujo de fondo infinito usando fondo_actual
     fondo_width = fondo_actual.get_width()
@@ -135,7 +153,12 @@ while running:
     screen.blit(fondo_actual, (fondo_x, 0))
     screen.blit(fondo_actual, (fondo_x - fondo_width, 0))
 
-    # Suelo y Sonic desplazados por la cámara
+
+    if fondo_seminight == fondo_actual:
+        suelo = pygame.Rect(-10000, 265, 120000, 100)  # Suelo más alto en esta sección
+    else:
+        suelo = pygame.Rect(-10000, 280, 120000, 100)  # Suelo centrado verticalmente
+        # Suelo y Sonic desplazados por la cámara
     suelo_draw = suelo.move(-camera_x, 0)
     # pygame.draw.rect(screen, (0, 0, 0), suelo_draw)
     screen.blit(sprite_sonic, (sonic.x - camera_x, sonic.y))
