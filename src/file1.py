@@ -10,12 +10,20 @@ pygame.init()
 
 fondo_day = pygame.image.load("../sprites/day.jpg")
 fondo_day = pygame.transform.scale(fondo_day, (1200, 700))
+fondo_day2 = pygame.image.load("../sprites/day(sinsol).jpg")
+fondo_day2 = pygame.transform.scale(fondo_day2, (1200, 700))
 fondo_midnight = pygame.image.load("../sprites/midnight.jpg")
 fondo_midnight = pygame.transform.scale(fondo_midnight, (1200, 700))
-fondo_seminight =pygame.image.load("../sprites/casinoche.jpg")
+fondo_midnight2 = pygame.image.load("../sprites/midnight(sinsol).jpg")
+fondo_midnight2 = pygame.transform.scale(fondo_midnight2, (1200, 700))
+fondo_seminight = pygame.image.load("../sprites/casinoche.jpg")
 fondo_seminight = pygame.transform.scale(fondo_seminight, (1200, 700))
+fondo_seminight2 = pygame.image.load("../sprites/casinoche(sinsol).jpg")
+fondo_seminight2 = pygame.transform.scale(fondo_seminight2,(1200, 700))
 fondo_night = pygame.image.load("../sprites/night.jpg")
 fondo_night = pygame.transform.scale(fondo_night, (1200, 700))
+fondo_night2 = pygame.image.load("../sprites/night(sinmoon).jpg")
+fondo_night2 = pygame.transform.scale(fondo_night2, (1200, 700))
 
 # crear ventana
 screen = pygame.display.set_mode((1200, 700))
@@ -109,43 +117,93 @@ while running:
     
     if sonic.x < 600:
         camera_x = 0
+  
     if sonic.x > 4400:
-        camera_x = 4400 - 600
+        camera_x = 5000 - 600
     elif sonic.x > 9400:
-        camera_x = 9400 - 600
+        camera_x = 10000 - 600
     elif sonic.x > 14400:
-        camera_x = 14400 - 600
+        camera_x = 100 - 600
 
-    # Seleccionar fondo según la posición de Sonic
-
-    if sonic.x < 5000:
+    # --- Selección de fondo y lógica de cámara ---
+    if sonic.x < 600:
         fondo_actual = fondo_day
-        camera_x = sonic.x - 600
-        if sonic.x > 4400:
-            camera_x = 4400 - 600
-            if sonic.x < 0:
-                camera_x = 0
-    elif sonic.x < 10000:
+        limite_camara = 0
+    elif sonic.x < 5000:
+        fondo_actual = fondo_day2
+        limite_camara = 4400
+    elif sonic.x < 6200:
         fondo_actual = fondo_midnight
-        camera_x = sonic.x - 600
-        if sonic.x > 9400:
-            camera_x = 9400 - 600
-    elif sonic.x < 15000:
+        limite_camara = 5600
+    elif sonic.x < 10000:
+        fondo_actual = fondo_midnight2
+        limite_camara = 9400
+    elif sonic.x < 11200:
         fondo_actual = fondo_seminight
-        camera_x = sonic.x - 600
-        if sonic.x > 14400:
-            camera_x = 14400 - 600
-    else:
+        limite_camara = 10600
+    elif sonic.x < 15000:
+        fondo_actual = fondo_seminight2
+        limite_camara = 14400
+    elif sonic.x < 16200:
         fondo_actual = fondo_night
+        camera_x = 15600
+   
+    else:
+        fondo_actual = fondo_night2
+        limite_camara = 19400
+
+    # Lógica de cámara
+    if sonic.x <= 0:
+        camera_x = -600
+    elif sonic.x < limite_camara:
         camera_x = sonic.x - 600
-    if sonic.x > 19400:
-        camera_x = 19400 - 600
-        while sonic.x > 20000:
-            sonic.x -= 20000  # Teletransportar Sonic para evitar night always
-        
-    # camara al entrar a otro fondo
+    else:
+        camera_x = limite_camara - 600
+ 
+
+
+
     
-    
+    # Lógica especial para fondo Day2: sigue hasta centro=4400 y luego se queda fija; mantiene bloqueo inicial en 1200
+    if fondo_actual == fondo_day2:
+        if sonic.x <= 1200:
+            camera_x = 1200 - 600
+        elif sonic.x < 4400:
+            camera_x = sonic.x - 600
+        else:
+            camera_x = 4400 - 600
+    if fondo_actual == fondo_midnight:
+        # Cámara fija en centro=5600 durante toda la sección midnight
+        camera_x = 5600 - 600
+    if fondo_actual == fondo_midnight2:
+        # Sigue hasta centro=9400 y luego se queda fija; mantiene bloqueo inicial en 6800
+        if sonic.x <= 6800:
+            camera_x = 6800 - 600
+        elif sonic.x < 9400:
+            camera_x = sonic.x - 600
+        else:
+            camera_x = 9400 - 600
+
+    if fondo_actual == fondo_seminight:
+        # Cámara fija en centro=10600 en toda la sección
+        camera_x = 10600 - 600
+    if fondo_actual == fondo_seminight2:
+        # Mantener cámara fija en centro=11800 hasta superarlo; seguir hasta 14400 y fijar ahí hasta cambiar de fondo
+        if sonic.x <= 11800:
+            camera_x = 11800 - 600
+        elif sonic.x < 14400:
+            camera_x = sonic.x - 600
+        else:
+            camera_x = 14400 - 600
+    if fondo_actual == fondo_night:
+        if sonic.x <= 15600:
+            camera_x = 15600 - 600
+        else:
+            camera_x = sonic.x - 600
+
+    # Teletransportar Sonic si supera el último fondo
+    if sonic.x > 20000:
+        sonic.x -= 20000
 
     # Dibujo de fondo infinito usando fondo_actual
     fondo_width = fondo_actual.get_width()
@@ -172,4 +230,3 @@ while running:
     pygame.display.flip()
 
 pygame.quit()
-
