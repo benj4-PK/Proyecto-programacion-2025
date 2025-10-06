@@ -212,7 +212,7 @@ while running:
     screen.blit(fondo_actual, (fondo_x - fondo_width, 0))
 
 
-    if fondo_seminight == fondo_actual:
+    if fondo_seminight == fondo_actual or fondo_seminight2 == fondo_actual:
         suelo = pygame.Rect(-10000, 265, 120000, 100)  # Suelo más alto en esta sección
     else:
         suelo = pygame.Rect(-10000, 280, 120000, 100)  # Suelo centrado verticalmente
