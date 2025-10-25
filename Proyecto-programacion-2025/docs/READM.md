@@ -1,1 +1,0 @@
-Estos es un juego simulando al sonic retro de los 90. Este posee 4 niveles que se mejoraran y enemigos que se seguiran añadiendo mas.
