@@ -31,6 +31,17 @@ crab3 = pygame.transform.scale(crab3, (150, 100))
 pez = pygame.image.load("../sprites/Sprites_enemies/pez.png")
 pez = pygame.transform.scale(pez, (140, 100))
 
+espinas = pygame.image.load("../sprites/spike.png")
+espinas = pygame.transform.scale(espinas, (50, 50))
 
+sol1 = pygame.image.load("../sprites/sol1.png")
+sol1 = pygame.transform.scale(sol1, (120, 120))
 
+atardecer = pygame.image.load("../sprites/atardecer.png")
+atardecer = pygame.transform.scale(atardecer, (120, 120))
 
+luna = pygame.image.load ("../sprites/luna.png")
+luna = pygame.transform.scale(luna, (120, 120))
+
+solnight = pygame.image.load("../sprites/seminoche.png")
+solnight = pygame.transform.scale(solnight, (120, 120))
