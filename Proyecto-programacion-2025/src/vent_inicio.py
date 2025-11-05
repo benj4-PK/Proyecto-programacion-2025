@@ -69,7 +69,7 @@ while ejecutando:
     if X_BOTON <= mouse_pos[0] <= X_BOTON + ANCHO_BOTON and \
        Y_BOTON_NUEVO <= mouse_pos[1] <= Y_BOTON_NUEVO + ALTO_BOTON:
         if mouse_click[0] == 1:  # clic izquierdo
-            print("Clic en NUEVO BOTÓN") # Mensaje de prueba
+            print("options") # Mensaje de prueba
             import file3 # Llama al segundo archivo de juego/opciones
             # Importar file2 y salir del bucle
             ejecutando = False # Se corrigió la variable a 'ejecutando'

@@ -4,7 +4,7 @@ import time
 import random
 import serial
 from vent_inicio import music_vol
-from enemigos import baknik, baknik2, baknik3, avispa, crab, crab2, crab3, pez, sol1, atardecer, luna, solnight, espinas
+from variablesimage import baknik, baknik2, baknik3, avispa, avispa2, avispa3, avispa4, crab, crab2, crab3, pez, sol1, atardecer, luna, solnight, espinas, fondo_day, fondo_day2, fondo_midnight, fondo_midnight2, fondo_seminight, fondo_seminight2, fondo_night, fondo_night2, rings, sprite_sonic, sprite_muerte, sprite_damage, sprite_damage2, sprite_damage3, sprite_damage4, sprite_eu_bata, sol_world_x, sol_world_y
 from file2 import fondo_elegido
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -56,25 +56,6 @@ def leer_joystick():
         # no queremos que fallos en la lectura detengan el juego
         pass
 
-# ---------- Carga de recursos (igual que tu código) ----------
-rings = pygame.image.load("../sprites/anillado2.png")
-rings = pygame.transform.scale(rings, (65, 65))
-fondo_day = pygame.image.load("../sprites/day.jpg")
-fondo_day = pygame.transform.scale(fondo_day, (1200, 700))
-fondo_day2 = pygame.image.load("../sprites/day(sinsol).jpg")
-fondo_day2 = pygame.transform.scale(fondo_day2, (1200, 700))
-fondo_midnight = pygame.image.load("../sprites/midnight.jpg")
-fondo_midnight = pygame.transform.scale(fondo_midnight, (1200, 700))
-fondo_midnight2 = pygame.image.load("../sprites/midnight(sinsol).jpg")
-fondo_midnight2 = pygame.transform.scale(fondo_midnight2, (1200, 700))
-fondo_seminight = pygame.image.load("../sprites/casinoche.jpg")
-fondo_seminight = pygame.transform.scale(fondo_seminight, (1200, 700))
-fondo_seminight2 = pygame.image.load("../sprites/casinoche(sinsol).jpg")
-fondo_seminight2 = pygame.transform.scale(fondo_seminight2,(1200, 700))
-fondo_night = pygame.image.load("../sprites/night.jpg")
-fondo_night = pygame.transform.scale(fondo_night, (1200, 700))
-fondo_night2 = pygame.image.load("../sprites/night(sinmoon).jpg")
-fondo_night2 = pygame.transform.scale(fondo_night2, (1200, 700))
 
 screen = pygame.display.set_mode((1200, 700))
 pygame.display.set_caption("El veloz")
@@ -99,22 +80,8 @@ except Exception as e:
 
 mirando_derecha = False
 
-sprite_sonic = pygame.image.load("../sprites/sprites_character/idle_character.png")
-sprite_sonic = pygame.transform.scale(sprite_sonic, (120, 120))
-SPRITE_W, SPRITE_H = sprite_sonic.get_size()
-sprite_muerte = pygame.image.load("../sprites/sprites_character/death.png")
-sprite_muerte = pygame.transform.scale(sprite_muerte, (120, 120))
-sprite_damage = pygame.image.load("../sprites/sprites_character/daño/HurtFrame1.png")
-sprite_damage = pygame.transform.scale(sprite_damage, (120, 120))
-sprite_damage2 = pygame.image.load("../sprites/sprites_character/daño/HurtFrame2.png")
-sprite_damage2 = pygame.transform.scale(sprite_damage2, (120, 120))
-sprite_damage3 = pygame.image.load("../sprites/sprites_character/daño/HurtFrame3.png")
-sprite_damage3 = pygame.transform.scale(sprite_damage3, (120, 120))
-sprite_damage4 = pygame.image.load("../sprites/sprites_character/daño/HurtFrame4.png")
-sprite_damage4 = pygame.transform.scale(sprite_damage4, (120, 120))
 
-sprite_eu_bata = pygame.image.load("../sprites/eu_bata.png")
-sprite_eu_bata = pygame.transform.scale(sprite_eu_bata, (400, 120))
+SPRITE_W, SPRITE_H = sprite_sonic.get_size()
 
 HITBOX_W = 50
 HITBOX_H_STAND = 100
@@ -122,7 +89,8 @@ HITBOX_H_CROUCH = 100
 
 ENEMY_ANIMATIONS = {
     "baknik": [baknik, baknik2, baknik3],
-    "crab": [crab, crab2, crab3]
+    "crab": [crab, crab2, crab3],
+    "avispa": [avispa, avispa2, avispa3, avispa4]
 }
 
 ENEMY_FRAME_DURATION = 0.15
@@ -144,6 +112,8 @@ gravedad = 2400
 vel_salto = -1100
 vel_lateral = 1000
 en_suelo = False
+cont_spindash = 0
+disminuir_spindash = 100
 
 camera_x = 0
 mostrar_bata = False
@@ -208,6 +178,7 @@ font = pygame.font.Font(None, 36)
 
 crabs_list = []
 bakniks_list = []
+avispas_list = []
 
 enemy_states = {}
 enemy_id = 0
@@ -218,14 +189,15 @@ ENEMY_GRAVEDAD = 2400
 
 def generate_enemies(num_enemies):
     global enemy_id
+    avispas_list.clear()
     crabs_list.clear()
     bakniks_list.clear()
     
     zonas_spawn = [
-        (1000, 20000),
-        (24000, 40000),
-        (44000, 60000),
-        (64000, 80000)
+        (1000, 18800),
+        (24000, 38800),
+        (44000, 58800),
+        (64000, 78800)
     ]
     
     for zona_start, zona_end in zonas_spawn:
@@ -257,6 +229,19 @@ def generate_enemies(num_enemies):
                 'frame_timer': 0.0
             }
 
+            x = random.randint(zona_start, zona_end)
+            avispa_rect = pygame.Rect(x, (suelo_y_default-220) - 65, 65, 65)
+            enemy_id += 1
+            avispas_list.append((enemy_id, avispa_rect))
+            enemy_states[enemy_id] = {
+                'vel_y': 0,
+                'vel_x': ENEMY_VEL_LATERAL,
+                'timer': 0,
+                'type': 'avispa',
+                'frame_index': 0,
+                'frame_timer': 0.0
+            }
+
 def update_enemy(enemy_id, enemy_rect, dt):
     state = enemy_states[enemy_id]
     
@@ -267,13 +252,16 @@ def update_enemy(enemy_id, enemy_rect, dt):
 
     enemy_rect.x += state['vel_x'] * dt
 
-    state['vel_y'] += ENEMY_GRAVEDAD * dt
-    enemy_rect.y += state['vel_y'] * dt
+ 
+    if state['type'] != 'avispa':
+        state['vel_y'] += ENEMY_GRAVEDAD * dt
+        enemy_rect.y += state['vel_y'] * dt
 
-    if enemy_rect.colliderect(suelo):
-        enemy_rect.bottom = suelo.y
-        state['vel_y'] = 0
-        
+        if enemy_rect.colliderect(suelo):   
+            enemy_rect.bottom = suelo.y
+            state['vel_y'] = 0
+    
+            
     state['frame_timer'] += dt
     if state['frame_timer'] >= ENEMY_FRAME_DURATION:
         state['frame_timer'] = 0
@@ -281,12 +269,121 @@ def update_enemy(enemy_id, enemy_rect, dt):
         if frames:
             state['frame_index'] = (state['frame_index'] + 1) % len(frames)
 
-generate_enemies(10)
+generate_enemies(20)
+espinas_positions = []
+nueva_zona = fondo_elegido
+if nueva_zona == 0:
+    espinas_positions = [
+        # Zona 1: Dia
+        
+            (2000, suelo_y_default+15),
+            (4500, suelo_y_default+15),
+            (7000, suelo_y_default+15),
+            (9500, suelo_y_default+15),
+            (12000, suelo_y_default+15),
+            (14500, suelo_y_default+15),
+            (17000, suelo_y_default+15),
+            (18600, suelo_y_default+15),
+            (18800, suelo_y_default+15),
+            (19900, suelo_y_default+15),
+    ]
+    
+elif nueva_zona == 1:
+    espinas_positions = [
+            # Zona 2: Medianoche (ejemplo)
+            (22000, suelo_y_default+15),
+            (21900, suelo_y_default+15),
+            (25000, suelo_y_default+15),
+            (25000, suelo_y_default+15-90),
+            (28000, suelo_y_default+15),
+            (30500, suelo_y_default+15),
+            (30400, suelo_y_default+15),
+            (33000, suelo_y_default+15),
+            (35500, suelo_y_default+15),
+            (35500, suelo_y_default+15-90),
+            (38000, suelo_y_default+15),
+            (38800, suelo_y_default+15),
+            (39900, suelo_y_default+15)
+    
+    ]
+            
+elif nueva_zona == 2:
+    espinas_positions = [
+            # Zona 3 : Seminoche 
+            (42000, suelo_y_default+25),
+            (44500, suelo_y_default+25),
+            (47000, suelo_y_default+25),
+            (49500, suelo_y_default+25),
+            (52000, suelo_y_default+25),
+            (54500, suelo_y_default+25),
+            (57000, suelo_y_default+25),
+            (57100, suelo_y_default+25),
+            (57100, suelo_y_default+25-90),
+            (57200, suelo_y_default+25),
+            (58000, suelo_y_default+25),
+            (58100, suelo_y_default+25),
+            (58200, suelo_y_default+25),
+            (58100, suelo_y_default+25-90),
+            (58800, suelo_y_default+25),
+            (59900, suelo_y_default+25)
+    ]
 
+elif nueva_zona == 3:
+            espinas_positions = [
+            # Zona 4 _ Noche
+            (62000, suelo_y_default+15),
+            (62100, suelo_y_default+15),
+            (62200, suelo_y_default+15),
+            (62500, suelo_y_default+15),
+            (63000, suelo_y_default+15),
+            (63000, suelo_y_default+15-90),
+            (63500, suelo_y_default+15),
+            (63600, suelo_y_default+15),
+            (64000, suelo_y_default+15),
+            (64300, suelo_y_default+15),
+            (64300, suelo_y_default+15-90),
+            (64400, suelo_y_default+15),
+            (64800, suelo_y_default+15),
+            (64800, suelo_y_default+15-90),
+            (65100, suelo_y_default+15),
+            (65200, suelo_y_default+15),
+            (65300, suelo_y_default+15),
+            (67000, suelo_y_default+15),
+            (67100, suelo_y_default+15),
+            (67200, suelo_y_default+15),
+            (69500, suelo_y_default+15),
+            (72000, suelo_y_default+15),
+            (74500, suelo_y_default+15),
+            (77000, suelo_y_default+15),
+            (78500, suelo_y_default+15-90),
+            (78500, suelo_y_default+15),
+            (78800, suelo_y_default+15),
+            (79900, suelo_y_default+15)
+            
+
+
+
+
+    ]
+# Ajustar la 'y' para que el dibujo y la colisión sean correctos
+# El sprite de espinas tiene una altura, y queremos que 'suelo_y_default' sea la parte inferior.
+# Obtener la altura de las espinas una sola vez
+if 'espinas' in globals():
+    ESPINAS_HEIGHT = espinas.get_height()
+else:
+    ESPINAS_HEIGHT = 90 # Valor por defecto si no se pudo cargar
+
+# Transformamos la lista de posiciones (x) en rectángulos de colisión (Rect)
+espinas_rects = []
+for x_world, y_world_base in espinas_positions:
+    # Creamos el Rect: x, y (ajustada para el suelo), ancho, alto
+    rect = pygame.Rect(x_world, y_world_base - ESPINAS_HEIGHT, espinas.get_width(), ESPINAS_HEIGHT)
+    espinas_rects.append(rect)
 def handle_hit(enemy_id, enemy_list, estado):
     global ring_count, running, invulnerable, invulnerability_timer, dead, death_timer, hurt, hurt_timer, death_music_played
     # Si se está invulnerable, empujar a sonic y salir
-    
+    if invulnerable == True:
+        sonic.x = sonic.x - 100  # Retroceder un poco al ser golpeado
 
     if estado in ["jump", "dash"]:
         # matar enemigo
@@ -309,6 +406,7 @@ def handle_hit(enemy_id, enemy_list, estado):
 
     print("¡Game Over! Sonic fue golpeado sin rings. Iniciando secuencia de muerte.")
     dead = True
+    
     death_timer = 0.0
     try:
         pygame.mixer.music.stop()
@@ -351,16 +449,50 @@ while running:
     dt = now - last_time
     last_time = now
 
+
     # Leer Arduino al inicio de cada frame
     leer_joystick()
 
-    # Procesar eventos primero
+    if dead:
+        # 1. Actualizar el temporizador de muerte
+        death_timer += dt
+        
+        # 2. Procesar eventos (solo para poder cerrar la ventana manualmente)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                
+        # 3. Dibujado en estado de muerte:
+        # Recalcular fondo (necesario si la cámara se movió antes de morir)
+        fondo_width = fondo_actual.get_width()
+        fondo_x = -camera_x % fondo_width
+        screen.blit(fondo_actual, (fondo_x, 0))
+        screen.blit(fondo_actual, (fondo_x - fondo_width, 0))
+        
+        sprite_draw_x = sonic.x - camera_x
+        sprite_draw_y = sonic.y - (SPRITE_H - sonic.height)
+        
+        screen.blit(sprite_muerte, (sprite_draw_x, sprite_draw_y)) 
+        
+        pygame.display.flip()
+        
+        # detener la música y cerrar tras el tiempo de muerte
+        if death_timer >= DEATH_DURATION:
+            try:
+                pygame.mixer.music.stop()
+            except Exception:
+                pass
+            running = False # Termina el bucle principal después del tiempo
+            
+        clock.tick(30)
+        continue  
+    # Eventos
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
     keys = pygame.key.get_pressed()
-
+    
     # calcular movimientos del joystick
     movimiento_joystick_derecha = joystick_x > (512 + umbral_movimiento)
     movimiento_joystick_izquierda = joystick_x < (512 - umbral_movimiento)
@@ -441,11 +573,12 @@ while running:
     # ajustar velocidades según estado
     if not invulnerable:
         if estado == "walk":
-            vel_lateral = 1200
+            vel_lateral = 1100
         elif estado == "run":
             vel_lateral = 1600
         elif estado == "dash":
             vel_lateral = 1400
+
         elif estado == "crouch":
             vel_lateral = 0
     elif estado == "crouch":
@@ -460,9 +593,9 @@ while running:
         ("midnight2", 20000, 40000),
         ("seminight2", 40000, 60000),
         ("night2", 60000, 80000)
-    ]
+    ] 
 
-    nueva_zona = fondo_elegido
+    
 
     if nueva_zona == 0:
         fondo_actual = fondo_day2; limite_camara = 19400
@@ -514,11 +647,63 @@ while running:
 
     imagen_actual = frames[frame_index] if len(frames) > 0 else idle_frame
 
+    # 1. Dibujar el Fondo (capa más profunda)
     fondo_width = fondo_actual.get_width()
     fondo_x = -camera_x % fondo_width
     screen.blit(fondo_actual, (fondo_x, 0))
     screen.blit(fondo_actual, (fondo_x - fondo_width, 0))
 
+    # 2. Dibujar el Sol (solo si estás en la zona 0)
+    if nueva_zona == 0:
+        # La posición en pantalla es la posición del mundo menos la cámara
+        sol_draw_x = sol_world_x - camera_x
+        # Si la imagen está dentro de la pantalla (opcional)
+        if -sol1.get_width() < sol_draw_x < 1200:
+            screen.blit(sol1, (sol_draw_x, sol_world_y)) 
+
+    # Solución: restar la posición de la cámara (camera_x) a la posición del mundo (2000)
+        #espinas_draw_x = 2000 - camera_x
+        #screen.blit(espinas, (espinas_draw_x, suelo_y_default-75) )
+        # 2.5. Dibujar Múltiples Espinas y Comprobar Colisiones
+    
+    for espina_rect in espinas_rects[:]:
+        espinas_draw_x = espina_rect.x - camera_x
+        
+        # Optimización: Solo dibujar si está en la pantalla
+        if -espina_rect.width < espinas_draw_x < screen.get_width():
+            screen.blit(espinas, (espinas_draw_x, espina_rect.y))
+        
+        # --- Lógica de Colisión ---
+        if sonic.colliderect(espina_rect):
+            # Lógica para manejar el daño ambiental (espinas)
+            if not invulnerable and not dead:
+                if ring_count > 0:
+                    print("¡Sonic fue golpeado por pínchos, Pierde rings.")
+                    ring_count = 0
+                    invulnerable = True
+                    invulnerability_timer = 0.0
+                    hurt = True
+                    hurt_timer = 0.0
+                    sonic.x = sonic.x - 200  # Retroceder un poco al ser golpeado
+                else:
+                    print("¡Game Over! Sonic tocó espinas sin rings.")
+                    dead = True
+                    death_timer = 0.0
+                    
+                    # Lógica de música de muerte (copiada de handle_hit)
+                    if not death_music_played:
+                        try:
+                            pygame.mixer.music.stop()
+                            death_music_path = "../musica/sonicded.mp3"
+                            if os.path.exists(death_music_path):
+                                pygame.mixer.music.load(death_music_path)
+                                pygame.mixer.music.play(0)
+                                death_music_played = True
+                        except Exception as e:
+                            print(f"Error al reproducir música de muerte: {e}")
+            break # Si chocó con una espina, no necesitas comprobar las demás.
+
+    # 3. Dibujar Sonic (capa media)
     sprite_draw_x = sonic.x - camera_x - (SPRITE_W - sonic.width) // 10
     sprite_draw_y = sonic.y - (SPRITE_H - sonic.height)
 
@@ -598,22 +783,43 @@ while running:
 
             if sonic.colliderect(baknik_rect):
                 handle_hit(enemy_id, bakniks_list, estado)
+    for enemy_id, avispa_rect in avispas_list[:]:
+        update_enemy(enemy_id, avispa_rect, dt)
+        avispa_draw_pos = (avispa_rect.x - camera_x, avispa_rect.y)
+        
+        if -65 <= avispa_draw_pos[0] <= 1265:
+            state = enemy_states.get(enemy_id)
+            if state and state['type'] == 'avispa':
+                frames_e = ENEMY_ANIMATIONS.get('avispa', [avispa])
+                current_sprite = frames_e[state['frame_index']]
+                if state['vel_x'] < 0:
+                    current_sprite = pygame.transform.flip(current_sprite, True, False)
+                screen.blit(current_sprite, avispa_draw_pos)
+            else:
+                screen.blit(avispa, avispa_draw_pos)
+
+            if sonic.colliderect(avispa_rect):
+                handle_hit(enemy_id, avispas_list, estado)
 
     pygame.display.flip()
     clock.tick(30)
-
+    volverabrir= 0
     # comprobaciones de final de nivel
     if fondo_elegido == 0 and sonic.x > 20000:
         print("¡Felicidades! Has completado el nivel 1.")
+        volverabrir = 1
         running = False
     if fondo_elegido == 1 and sonic.x > 40000:
         print("¡Felicidades! Has completado el nivel 2.")
+        volverabrir = 2
         running = False
     if fondo_elegido == 2 and sonic.x > 60000:
         print("¡Felicidades! Has completado el nivel 3.")
+        volverabrir = 3
         running = False
     if fondo_elegido == 3 and sonic.x > 80000:
         print("¡Felicidades! Has completado el nivel 4.")
+        volverabrir = 4
         running = False
 
 # ---------- Salir: cerrar Arduino si está abierto ----------
@@ -624,3 +830,11 @@ except Exception:
     pass
 
 pygame.quit()
+if volverabrir == 1:
+    import vent_inicio
+if volverabrir == 2:
+    import vent_inicio
+if volverabrir == 3:
+    import vent_inicio
+if volverabrir == 4:
+    import vent_inicio
