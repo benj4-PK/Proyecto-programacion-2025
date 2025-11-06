@@ -13,10 +13,9 @@ pygame.init()
 
 # ---------- Configuración Arduino (abrir una vez) ----------
 arduino = None
-COM_PORT = 'COM3' # ajustá si tu Arduino está en otro puerto
+COM_PORT = 'COM3'  # ajustá si tu Arduino está en otro puerto
 BAUDRATE = 9600
 try:
-
     print("🔄 Intentando conectar a", COM_PORT)
     arduino = serial.Serial(COM_PORT, BAUDRATE, timeout=0.05)
     time.sleep(2)
@@ -32,7 +31,7 @@ joystick_y = 513
 joystick_btn = 1
 joystick_menu_btn = 1
 joystick_run_btn = 1
-umbral_movimiento = 400
+umbral_movimiento = 200
 
 def leer_joystick():
     """Lee una línea del Arduino si hay datos disponibles y actualiza las variables globales."""
@@ -124,12 +123,10 @@ disminuir_spindash = 100
 # Variables para hacer las roquinhas
 rocas_estados = {} 
 roca_id_counter = 0 
-ROCA_GRAVEDAD = 1200 
-ROCA_VEL_Y_INICIAL = -10
+ROCA_GRAVEDAD = 1800 
+ROCA_VEL_Y_INICIAL = 0
 
 camera_x = 0
-# Fijar cámara en nivel 1 durante lock
-camera_locked_fixed = False
 mostrar_bata = False
 tiempo_bata = 0
 
@@ -209,10 +206,10 @@ def generate_enemies(num_enemies):
     bakniks_list.clear()
     
     zonas_spawn = [
-        (1000, 18750),
-        (22000, 38750),
-        (42000, 58750),
-        (62000, 78750)
+        (1000, 18800),
+        (24000, 38800),
+        (44000, 58800),
+        (64000, 78800)
     ]
     
     for zona_start, zona_end in zonas_spawn:
@@ -278,23 +275,15 @@ def generate_rocks(start_x, end_x, num_rocks, rock_images):
         
         rocas_estados[roca_id_counter] = {
             'vel_y': ROCA_VEL_Y_INICIAL,
-            'image': imagen_roca # Guardamos qué imagaen usa para dibujarla
+            'image': imagen_roca # Guardamos qué imagen usa para dibujarla
         }
 
 # Imágenes disponibles para las rocas
 ROCK_IMAGES = [roca1, roca2, roca3]
-
-# Flags para spawnear rocas una sola vez por zona
-zona_rocks_spawned = {0: False, 1: False, 2: False, 3: False}
-
-# Bloqueo y spawns escalonados por nivel
-lock_active = False
-lock_timer = 0.0
-lock_duration = 0.0
-lock_camera_x = 0
-spawn_plan = []  # lista de tuplas (t_spawn, count)
-random.seed()
-
+# Generar Rocas 
+# Ajusta el rango final según el fondo_elegido
+if fondo_elegido == 2:
+    generate_rocks(58800, 60000, 15, ROCK_IMAGES) # 15 rocas en la última zona del nivel 4
 def update_enemy(enemy_id, enemy_rect, dt):
     state = enemy_states[enemy_id]
     
@@ -310,7 +299,7 @@ def update_enemy(enemy_id, enemy_rect, dt):
         state['vel_y'] += ENEMY_GRAVEDAD * dt
         enemy_rect.y += state['vel_y'] * dt
 
-        if enemy_rect.colliderect(suelo):  
+        if enemy_rect.colliderect(suelo):   
             enemy_rect.bottom = suelo.y
             state['vel_y'] = 0
     
@@ -322,7 +311,7 @@ def update_enemy(enemy_id, enemy_rect, dt):
         if frames:
             state['frame_index'] = (state['frame_index'] + 1) % len(frames)
 
-generate_enemies(15)
+generate_enemies(20)
 espinas_positions = []
 nueva_zona = fondo_elegido
 if nueva_zona == 0:
@@ -413,6 +402,10 @@ elif nueva_zona == 3:
             (78800, suelo_y_default+15),
             (79900, suelo_y_default+15)
             
+
+
+
+
     ]
 # Ajustar la 'y' para que el dibujo y la colisión sean correctos
 # El sprite de espinas tiene una altura, y queremos que 'suelo_y_default' sea la parte inferior.
@@ -428,35 +421,22 @@ for x_world, y_world_base in espinas_positions:
     # Creamos el Rect: x, y (ajustada para el suelo), ancho, alto
     rect = pygame.Rect(x_world, y_world_base - ESPINAS_HEIGHT, espinas.get_width(), ESPINAS_HEIGHT)
     espinas_rects.append(rect)
-    
-# Modificación de handle_hit para poder eliminar las rocas y que el código funcione tanto para rocas como para enemigos.
-def handle_hit(hit_id, hit_list, estado, is_rock=False): 
-    global ring_count, running, invulnerable, invulnerability_timer, dead, death_timer, hurt, hurt_timer, death_music_played, rocas_estados
-
+def handle_hit(enemy_id, enemy_list, estado):
+    global ring_count, running, invulnerable, invulnerability_timer, dead, death_timer, hurt, hurt_timer, death_music_played
     # Si se está invulnerable, empujar a sonic y salir
-    if invulnerable:
-        sonic.x -= 100  # Retroceder un poco al ser golpeado
+    if invulnerable == True:
+        sonic.x = sonic.x - 100  # Retroceder un poco al ser golpeado
 
-    if estado in ["jump", "dash"] and not is_rock:
-        # Si es un ataque válido (salto/dash) y NO es una roca (las rocas dañan, no se destruyen por golpe)
-        hit_list[:] = [hit for hit in hit_list if hit[0] != hit_id]
-        if hit_id in enemy_states:
-            del enemy_states[hit_id]
+    if estado in ["jump", "dash"]:
+        # matar enemigo
+        enemy_list[:] = [enemy for enemy in enemy_list if enemy[0] != enemy_id]
+        if enemy_id in enemy_states:
+            del enemy_states[enemy_id]
         return
-    
-    # Si es una roca, SIEMPRE se elimina (ya sea que cause daño o no, desaparece al chocar)
-    if is_rock:
-        hit_list[:] = [hit for hit in hit_list if hit[0] != hit_id]
-        if hit_id in rocas_estados:
-            del rocas_estados[hit_id]
-        # Continuar para ver si la roca causó daño o si Sonic era invulnerable
-        if invulnerable or dead:
-            return # No causa daño si es invulnerable
 
     if invulnerable or dead:
         return
 
-    # Lógica de daño
     if ring_count > 0:
         print(f"¡Sonic fue golpeado! Pierde {ring_count} rings, pero sobrevive.")
         ring_count = 0
@@ -547,34 +527,41 @@ while running:
             running = False # Termina el bucle principal después del tiempo
             
         clock.tick(30)
-        continue 
-
+        continue  
     # Eventos
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    # --- Lógica de la Roca: Actualización y Colisión (NO DIBUJADO AQUÍ) ---
-    for roca_id, roca_rect, roca_image in rocas_list[:]:
-        state = rocas_estados.get(roca_id)
+    # --- Lógica de la Roca ---
+for roca_id, roca_rect, roca_image in rocas_list[:]:
+    # 1. Aplicar Gravedad (ignora el suelo)
+    state = rocas_estados.get(roca_id)
+    if state:
+        state['vel_y'] += ROCA_GRAVEDAD * dt
+        roca_rect.y += state['vel_y'] * dt
+    
+    roca_draw_pos = (roca_rect.x - camera_x, roca_rect.y)
+    
+    # 2. Dibujado
+    # Solo dibujamos si está visible en la pantalla
+    if -roca_rect.width < roca_draw_pos[0] < screen.get_width() and roca_draw_pos[1] < screen.get_height():
+        screen.blit(roca_image, roca_draw_pos)
+    
+    # 3. Colisión con Sonic
+    if sonic.colliderect(roca_rect):
+        # Usamos tu función de golpe para manejar la pérdida de rings o la muerte
+        handle_hit(roca_id, rocas_list, estado) 
         
-        if state:
-            # Aplicar Gravedad
-            state['vel_y'] += ROCA_GRAVEDAD * dt
-            roca_rect.y += state['vel_y'] * dt
-        
-        # Colisión con Sonic (Usamos handle_hit, que maneja el daño)
-        if sonic.colliderect(roca_rect):
-            # Llama a handle_hit para manejar la colisión y posible daño, indicando que es una roca.
-            handle_hit(roca_id, rocas_list, estado, is_rock=True) 
-            
-        # Eliminar si sale por la parte inferior de la pantalla (cae y desaparece)
-        if roca_rect.y > 700 + 100: # 700 es la altura de la pantalla + un margen
-            # Para evitar errores si la roca ya fue eliminada por colisión, comprobamos la existencia
-            if (roca_id, roca_rect, roca_image) in rocas_list: 
-                rocas_list.remove((roca_id, roca_rect, roca_image))
-            if roca_id in rocas_estados:
-                del rocas_estados[roca_id]
+    # 4. Eliminar si sale de la pantalla (cae)
+    # Si la roca cae fuera del borde inferior (ej: 800 pixeles de alto)
+    if roca_rect.y > 800:
+        # Nota: handle_hit elimina al enemigo de la lista, pero la roca
+        # necesita ser eliminada manualmente si solo cae.
+        if (roca_id, roca_rect, roca_image) in rocas_list:
+            rocas_list.remove((roca_id, roca_rect, roca_image))
+        if roca_id in rocas_estados:
+            del rocas_estados[roca_id]
 
     keys = pygame.key.get_pressed()
     
@@ -633,7 +620,7 @@ while running:
         en_suelo = True
     else:
         en_suelo = False
-    # Si se presiona el botón de menú (o ESC) se vuelve al menú
+   # Si se presiona el botón de menú (o ESC) se vuelve al menú
     if keys[pygame.K_ESCAPE] or joystick_menu_btn == 0:
         import vent_inicio
         running = False
@@ -683,90 +670,7 @@ while running:
         ("night2", 60000, 80000)
     ] 
 
-    # Disparar BLOQUEO y plan de spawns al alcanzar x objetivo por nivel
-    trigger_hit = False
-    if fondo_elegido == 0 and not zona_rocks_spawned[0] and sonic.x >= 19400:
-        zona_rocks_spawned[0] = True
-        lock_duration = 5.0
-        trigger_hit = True
-        lock_end_x = 20000
-        spawn_range = (18800, 20000)
-    elif fondo_elegido == 1 and not zona_rocks_spawned[1] and sonic.x >= 39400:
-        zona_rocks_spawned[1] = True
-        lock_duration = 10.0
-        trigger_hit = True
-        lock_end_x = 40000
-        spawn_range = (38800, 40000)
-    elif fondo_elegido == 2 and not zona_rocks_spawned[2] and sonic.x >= 59400:
-        zona_rocks_spawned[2] = True
-        lock_duration = 15.0
-        trigger_hit = True
-        lock_end_x = 60000
-        spawn_range = (58800, 60000)
-    elif fondo_elegido == 3 and not zona_rocks_spawned[3] and 78800 <= sonic.x <= 80000:
-        zona_rocks_spawned[3] = False
-        lock_end_x = 80000
-        lock_duration = 0.0
-        trigger_hit = False
-        spawn_range = (78800, 80000)
-
-    if trigger_hit:
-        lock_active = True
-        lock_timer = 0.0
-        # Fijar la cámara al borde final - 600 para bloquear avance
-        lock_camera_x = lock_end_x - 600
-        if fondo_elegido == 0:
-            # Nivel 1: fijar cámara en 19400 y limitar sonic a 19999
-            camera_locked_fixed = True
-            camera_x = 19400
-            if sonic.x > 19999:
-                sonic.x = 19999
-        else:
-            # Otros niveles: comportamiento anterior
-            camera_x = lock_camera_x
-            if sonic.x > lock_camera_x + 600:
-                sonic.x = lock_camera_x + 600
-        # Crear un plan de spawns aleatorios durante la ventana
-        spawn_plan = []
-        # Definir dificultad por nivel (más oleadas y más rocas en niveles avanzados)
-        if fondo_elegido == 0:       # day
-            waves = random.randint(3, 4)
-            count_min, count_max = 3, 5
-        elif fondo_elegido == 1:     # midnight
-            waves = random.randint(5, 6)
-            count_min, count_max = 4, 6
-        elif fondo_elegido == 2:     # seminight
-            waves = random.randint(7, 9)
-            count_min, count_max = 5, 7
-        else:                        # night
-            waves = random.randint(8, 9)
-            count_min, count_max = 6, 8
-        for _ in range(waves):
-            t_spawn = random.uniform(0.2, max(0.2, lock_duration - 0.2))
-            count = random.randint(count_min, count_max)
-            spawn_plan.append((t_spawn, count))
-        # ordenar por tiempo
-        spawn_plan.sort(key=lambda x: x[0])
-        # Guardar el rango a usar en el plan
-        planned_spawn_range = spawn_range
-
-    # Ejecutar plan de spawns durante el bloqueo
-    if lock_active and spawn_plan:
-        # Spawnear todas las oleadas cuyo t_spawn <= lock_timer (y eliminarlas)
-        ready = [p for p in spawn_plan if p[0] <= lock_timer]
-        if ready:
-            for (_, count) in ready:
-                # generar 'count' rocas en posiciones aleatorias del rango
-                for _ in range(count):
-                    x = random.randint(planned_spawn_range[0], planned_spawn_range[1])
-                    imagen_roca = random.choice(ROCK_IMAGES)
-                    w, h = imagen_roca.get_size()
-                    roca_rect = pygame.Rect(x, -100, w, h)
-                    roca_id_counter += 1
-                    rocas_list.append((roca_id_counter, roca_rect, imagen_roca))
-                    rocas_estados[roca_id_counter] = {'vel_y': ROCA_VEL_Y_INICIAL, 'image': imagen_roca}
-            # remover las oleadas ya usadas
-            spawn_plan = [p for p in spawn_plan if p[0] > lock_timer]
+    
 
     if nueva_zona == 0:
         fondo_actual = fondo_day2; limite_camara = 19400
@@ -805,40 +709,6 @@ while running:
             camera_x = sonic.x - 600
         else:
             camera_x = limite_camara - 600
-    # Clamp definitivo para fondo day (nivel 1): no pasar de 19400
-    if fondo_elegido == 0:
-        camera_x = min(camera_x, 19400)
-    # Clamp global para todos los niveles: no pasar del límite del nivel
-    camera_x = min(camera_x, limite_camara - 600)
-
-    # Aplicar bloqueo mientras dure: fijar cámara y evitar avanzar a la derecha (con transición suave)
-    if lock_active:
-        lock_timer += dt
-        if camera_locked_fixed and fondo_elegido == 0:
-            # Nivel 1: cámara fija en 19400 y clamp sonic en 19999
-            camera_x = 19400
-            if sonic.x > 19999:
-                sonic.x = 19999
-        else:
-            # Transición suave de cámara hacia lock_camera_x para evitar tirones
-            lerp_factor = min(1.0, dt * 8.0)  # factor de suavizado
-            camera_x = camera_x + (lock_camera_x - camera_x) * lerp_factor
-            # Limitar avance del jugador al borde derecho del lock
-            max_sonic_x = lock_camera_x + 600
-            if sonic.x > max_sonic_x:
-                sonic.x = max_sonic_x
-        # Clamp también durante lock en fondo day
-        if fondo_elegido == 0:
-            camera_x = min(camera_x, 19400)
-        # Clamp global durante lock: no pasar del límite del nivel
-        camera_x = min(camera_x, limite_camara - 600)
-        # Liberar al terminar
-        if lock_timer >= lock_duration:
-            lock_active = False
-            camera_locked_fixed = False
-            # Reenganchar la cámara con lógica de plantado para evitar salto brusco
-            plantada = True
-            camera_planted_x = max(0, int(sonic.x - 10))
 
     # animación de frames
     frames = animaciones.get(estado, [idle_frame])
@@ -858,7 +728,7 @@ while running:
     screen.blit(fondo_actual, (fondo_x, 0))
     screen.blit(fondo_actual, (fondo_x - fondo_width, 0))
 
-    # 2. Dibujar el Sol/Luna (solo si estás en la zona 0)
+    # 2. Dibujar el Sol (solo si estás en la zona 0)
     if nueva_zona == 0:
         # La posición en pantalla es la posición del mundo menos la cámara
         sol_draw_x = sol_world_x - camera_x
@@ -866,7 +736,10 @@ while running:
         if -sol1.get_width() < sol_draw_x < 1200:
             screen.blit(sol1, (sol_draw_x, sol_world_y)) 
 
-    # 2.5. Dibujar Múltiples Espinas y Comprobar Colisiones
+    # Solución: restar la posición de la cámara (camera_x) a la posición del mundo (2000)
+        #espinas_draw_x = 2000 - camera_x
+        #screen.blit(espinas, (espinas_draw_x, suelo_y_default-75) )
+        # 2.5. Dibujar Múltiples Espinas y Comprobar Colisiones
     
     for espina_rect in espinas_rects[:]:
         espinas_draw_x = espina_rect.x - camera_x
@@ -904,17 +777,8 @@ while running:
                         except Exception as e:
                             print(f"Error al reproducir música de muerte: {e}")
             break # Si chocó con una espina, no necesitas comprobar las demás.
-    
-    # --- 3. DIBUJAR ROCAS (CORREGIDO) ---
-    for roca_id, roca_rect, roca_image in rocas_list[:]:
-        roca_draw_pos = (roca_rect.x - camera_x, roca_rect.y)
-        
-        # Dibujado
-        if -roca_rect.width < roca_draw_pos[0] < screen.get_width() and roca_draw_pos[1] < screen.get_height():
-            screen.blit(roca_image, roca_draw_pos)
 
-
-    # 4. Dibujar Sonic (capa media)
+    # 3. Dibujar Sonic (capa media)
     sprite_draw_x = sonic.x - camera_x - (SPRITE_W - sonic.width) // 10
     sprite_draw_y = sonic.y - (SPRITE_H - sonic.height)
 
@@ -975,7 +839,7 @@ while running:
                 screen.blit(crab, crab_draw_pos)
 
             if sonic.colliderect(crab_rect):
-                handle_hit(enemy_id, crabs_list, estado) # NO es una roca
+                handle_hit(enemy_id, crabs_list, estado)
 
     for enemy_id, baknik_rect in bakniks_list[:]:
         update_enemy(enemy_id, baknik_rect, dt)
@@ -993,7 +857,7 @@ while running:
                 screen.blit(baknik, baknik_draw_pos)
 
             if sonic.colliderect(baknik_rect):
-                handle_hit(enemy_id, bakniks_list, estado) # NO es una roca
+                handle_hit(enemy_id, bakniks_list, estado)
     for enemy_id, avispa_rect in avispas_list[:]:
         update_enemy(enemy_id, avispa_rect, dt)
         avispa_draw_pos = (avispa_rect.x - camera_x, avispa_rect.y)
@@ -1010,7 +874,7 @@ while running:
                 screen.blit(avispa, avispa_draw_pos)
 
             if sonic.colliderect(avispa_rect):
-                handle_hit(enemy_id, avispas_list, estado) # NO es una roca
+                handle_hit(enemy_id, avispas_list, estado)
 
     pygame.display.flip()
     clock.tick(30)

@@ -1,6 +1,4 @@
-import os
-import time
-import random
+
 import pygame
 
 # Inicializar Pygame
@@ -62,6 +60,9 @@ avispa3 = pygame.transform.scale(avispa3, (160, 100))
 avispa4 = pygame.image.load("../sprites/Sprites_enemies/avispa4.png")
 avispa4 = pygame.transform.scale(avispa4, (160, 100))
 
+proyectil = pygame.image.load("../sprites/avispaproyectil.png")
+proyectil = pygame.transform.scale(proyectil, (50, 20))
+
 crab = pygame.image.load("../sprites/Sprites_enemies/crab.png")
 crab = pygame.transform.scale(crab, (150, 100))      # Mismo tamaño que baknik
 
@@ -78,6 +79,15 @@ pez = pygame.transform.scale(pez, (140, 100))
 espinas = pygame.image.load("../sprites/spike.png")
 espinas = pygame.transform.scale(espinas, (100, 90))
 
+roca1 = pygame.image.load("../sprites/rock/roca1.png")
+roca1 = pygame.transform.scale(roca1, (120, 100))
+
+roca2 = pygame.image.load("../sprites/rock/roca2.png")
+roca2 = pygame.transform.scale(roca2, (120, 100))
+
+roca3 = pygame.image.load("../sprites/rock/roca3.png")
+roca3 = pygame.transform.scale(roca3, (120, 100))
+
 #sprites lunas y soles
 sol1 = pygame.image.load("../sprites/sol1.png")
 sol1 = pygame.transform.scale(sol1, (850, 800))
@@ -92,3 +102,13 @@ luna = pygame.transform.scale(luna, (120, 120))
 
 solnight = pygame.image.load("../sprites/seminoche.png")
 solnight = pygame.transform.scale(solnight, (120, 120))
+
+#sprite jefe final
+#eggman = pygame.image.load("../sprites/Sprites_enemies/eggman.png")
+#eggman = pygame.transform.scale(eggman, (250, 250))
+
+#ggman_attack = pygame.image.load("../sprites/Sprites_enemies/eggman2.png")
+#eggman_attack = pygame.transform.scale(eggman_attack, (250, 250))
+
+#eggman_attack2 = pygame.image.load("../sprites/Sprites_enemies/eggman3.png")
+#eggman_attack2 = pygame.transform.scale(eggman_attack2, (250, 250))
