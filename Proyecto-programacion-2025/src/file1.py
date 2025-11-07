@@ -4,6 +4,7 @@ import time
 import random
 import serial
 from vent_inicio import music_vol
+from vent_inicio2 import music_vol
 from variablesimage import baknik, baknik2, baknik3, avispa, avispa2, avispa3, avispa4, crab, crab2, crab3, pez, sol1, atardecer, luna, solnight, espinas, fondo_day, fondo_day2, fondo_midnight, fondo_midnight2, fondo_seminight, fondo_seminight2, fondo_night, fondo_night2, rings, sprite_sonic, sprite_muerte, sprite_damage, sprite_damage2, sprite_damage3, sprite_damage4, sprite_eu_bata, sol_world_x, sol_world_y, proyectil, roca1, roca2, roca3
 from file2 import fondo_elegido
 
@@ -121,11 +122,18 @@ vel_lateral = 1000
 en_suelo = False
 cont_spindash = 0
 disminuir_spindash = 100
+
 # Variables para hacer las roquinhas
 rocas_estados = {} 
 roca_id_counter = 0 
 ROCA_GRAVEDAD = 1200 
 ROCA_VEL_Y_INICIAL = -10
+
+# --- NUEVAS VARIABLES PARA EL DISPARO DE AVISPAS ---
+SHOOT_INTERVAL = 3.5 # Disparará cada 2.5 segundos (ajustable)
+avispa_shoot_timers = {} # {id_avispa: tiempo_ultimo_disparo}
+proyectiles_avispa_list = [] # Lista para almacenar los proyectiles
+# ---------------------------------------------------
 
 camera_x = 0
 # Fijar cámara en nivel 1 durante lock
@@ -256,6 +264,9 @@ def generate_enemies(num_enemies):
                 'frame_index': 0,
                 'frame_timer': 0.0
             }
+            # Inicializar el temporizador de disparo para esta avispa
+            avispa_shoot_timers[enemy_id] = time.time()
+            
 def generate_rocks(start_x, end_x, num_rocks, rock_images):
     global roca_id_counter
     rocas_list.clear()
@@ -580,6 +591,77 @@ while running:
             if roca_id in rocas_estados:
                 del rocas_estados[roca_id]
 
+    # --- Lógica de Proyectiles Avispa: Actualización y Colisiódddddddddn ---
+    for proyectil_data in proyectiles_avispa_list[:]:
+        proyectil_rect = proyectil_data['rect']
+        
+        # Actualizar posición
+        proyectil_rect.x += proyectil_data['vel_x'] * dt
+        
+        proyectil_rect.y += proyectil_data['vel_y'] * dt
+        # Colisión con Sonic
+        if sonic.colliderect(proyectil_rect):
+            if not invulnerable and not dead:
+                if ring_count > 0:
+                    print("¡Sonic fue golpeado por un proyectil! Pierde rings.")
+                    ring_count = 0
+                    invulnerable = True
+                    invulnerability_timer = 0.0
+                    hurt = True
+                    hurt_timer = 0.0
+                    sonic.x = sonic.x - 200 # Empujar un poco
+                else:
+                    print("¡Game Over! Sonic fue golpeado por un proyectil sin rings.")
+                    dead = True
+                    death_timer = 0.0
+                    # Lógica de música de muerte
+                    if not death_music_played:
+                        try:
+                            pygame.mixer.music.stop()
+                            death_music_path = "../musica/sonicded.mp3"
+                            if os.path.exists(death_music_path):
+                                pygame.mixer.music.load(death_music_path)
+                                pygame.mixer.music.play(0)
+                                death_music_played = True
+                        except Exception as e:
+                            print(f"Error al reproducir música de muerte: {e}")
+            
+            # Eliminar el proyectil después de la colisión o si es invulnerable
+            if proyectil_data in proyectiles_avispa_list:
+                proyectiles_avispa_list.remove(proyectil_data)
+            continue # Pasar al siguiente proyectil
+
+        # Eliminar si sale por la izquierda de la pantalla
+        if proyectil_rect.x < camera_x - 100:
+            if proyectil_data in proyectiles_avispa_list:
+                proyectiles_avispa_list.remove(proyectil_data)
+                
+    # --- Lógica de Disparo de Avispas (Temporizador) ---
+    for enemy_id, avispa_rect in avispas_list[:]:
+        
+        # 1. Comprobación de Disparo Temporizado
+        avispa_id = enemy_id
+        if (avispa_id in avispa_shoot_timers and 
+            now - avispa_shoot_timers[avispa_id] >= SHOOT_INTERVAL and 
+            # Avispa en pantalla (margen de 100 a 1200)
+            avispa_rect.x < camera_x + 1200 and avispa_rect.x > camera_x - 100): 
+
+            # 2. Lógica para crear el nuevo proyectilavispa (moviéndose hacia la izquierda)
+            proyectil_x = avispa_rect.x 
+            proyectil_y = avispa_rect.y + 30 # Ajuste vertical
+            
+            proyectiles_avispa_list.append({
+                'rect': pygame.Rect(proyectil_x, proyectil_y, proyectil.get_width(), proyectil.get_height()),
+                'vel_x': -300, # Velocidad del proyectil (300 pixeles por segundo)
+                'vel_y': 150,
+            })
+            
+            # 3. Reiniciar el Temporizador
+            avispa_shoot_timers[avispa_id] = now
+            
+    # ---------------------------------------------------
+
+
     keys = pygame.key.get_pressed()
     
     # calcular movimientos del joystick
@@ -667,7 +749,7 @@ while running:
         if estado == "walk":
             vel_lateral = 1100
         elif estado == "run":
-            vel_lateral = 1600
+            sonic.x = sonic.x + int(300 * dt) if mirando_derecha else sonic.x - int(300 * dt)
         elif estado == "dash":
             vel_lateral = 1400
 
@@ -919,6 +1001,15 @@ while running:
         if -roca_rect.width < roca_draw_pos[0] < screen.get_width() and roca_draw_pos[1] < screen.get_height():
             screen.blit(roca_image, roca_draw_pos)
 
+    # 3.5. Dibujar Proyectiles de Avispa
+    for proyectil_data in proyectiles_avispa_list[:]:
+        proyectil_rect = proyectil_data['rect']
+        proyectil_draw_pos = (proyectil_rect.x - camera_x, proyectil_rect.y)
+        
+        # Dibujar si está en pantalla
+        if -proyectil_rect.width < proyectil_draw_pos[0] < screen.get_width():
+            # Asumo que 'proyectil' es la imagen importada
+            screen.blit(proyectil, proyectil_draw_pos)
 
     # 4. Dibujar Sonic (capa media)
     sprite_draw_x = sonic.x - camera_x - (SPRITE_W - sonic.width) // 10

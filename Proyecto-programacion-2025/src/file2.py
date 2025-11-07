@@ -1,6 +1,7 @@
 import os
 import pygame
 from vent_inicio import music_vol
+from vent_inicio2 import music_vol
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
