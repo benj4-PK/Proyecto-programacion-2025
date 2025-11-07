@@ -32,7 +32,7 @@ joystick_y = 513
 joystick_btn = 1
 joystick_menu_btn = 1
 joystick_run_btn = 1
-umbral_movimiento = 400
+umbral_movimiento = 100  # zona muerta para el joystick
 
 def leer_joystick():
     """Lee una línea del Arduino si hay datos disponibles y actualiza las variables globales."""
@@ -261,7 +261,7 @@ def generate_rocks(start_x, end_x, num_rocks, rock_images):
     rocas_list.clear()
     
     # Aseguramos que las rocas aparezcan por encima de la pantalla
-    spawn_y = -100 
+    spawn_y = -150 
     
     for _ in range(num_rocks):
         x = random.randint(start_x, end_x)
@@ -339,6 +339,7 @@ if nueva_zona == 0:
             (18600, suelo_y_default+15),
             (18800, suelo_y_default+15),
             (19900, suelo_y_default+15),
+            (20000, suelo_y_default+15)
     ]
     
 elif nueva_zona == 1:
@@ -356,7 +357,8 @@ elif nueva_zona == 1:
             (35500, suelo_y_default+15-90),
             (38000, suelo_y_default+15),
             (38800, suelo_y_default+15),
-            (39900, suelo_y_default+15)
+            (39900, suelo_y_default+15),
+            (40000, suelo_y_default+15)
     
     ]
             
@@ -378,7 +380,8 @@ elif nueva_zona == 2:
             (58200, suelo_y_default+25),
             (58100, suelo_y_default+25-90),
             (58800, suelo_y_default+25),
-            (59900, suelo_y_default+25)
+            (59900, suelo_y_default+25),
+            (60000, suelo_y_default+25)
     ]
 
 elif nueva_zona == 3:
@@ -522,6 +525,7 @@ while running:
         # 2. Procesar eventos (solo para poder cerrar la ventana manualmente)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                import vent_inicio
                 running = False
             
         # 3. Dibujado en estado de muerte:
@@ -878,6 +882,8 @@ while running:
         # --- Lógica de Colisión ---
         if sonic.colliderect(espina_rect):
             # Lógica para manejar el daño ambiental (espinas)
+            if invulnerable == True:
+                sonic.x = sonic.x - 100  # Retroceder un poco al ser golpeado
             if not invulnerable and not dead:
                 if ring_count > 0:
                     print("¡Sonic fue golpeado por pínchos, Pierde rings.")
@@ -975,7 +981,7 @@ while running:
                 screen.blit(crab, crab_draw_pos)
 
             if sonic.colliderect(crab_rect):
-                handle_hit(enemy_id, crabs_list, estado) # NO es una roca
+                handle_hit(enemy_id, crabs_list, estado) 
 
     for enemy_id, baknik_rect in bakniks_list[:]:
         update_enemy(enemy_id, baknik_rect, dt)
@@ -993,7 +999,7 @@ while running:
                 screen.blit(baknik, baknik_draw_pos)
 
             if sonic.colliderect(baknik_rect):
-                handle_hit(enemy_id, bakniks_list, estado) # NO es una roca
+                handle_hit(enemy_id, bakniks_list, estado) 
     for enemy_id, avispa_rect in avispas_list[:]:
         update_enemy(enemy_id, avispa_rect, dt)
         avispa_draw_pos = (avispa_rect.x - camera_x, avispa_rect.y)
@@ -1010,7 +1016,7 @@ while running:
                 screen.blit(avispa, avispa_draw_pos)
 
             if sonic.colliderect(avispa_rect):
-                handle_hit(enemy_id, avispas_list, estado) # NO es una roca
+                handle_hit(enemy_id, avispas_list, estado)
 
     pygame.display.flip()
     clock.tick(30)
@@ -1019,18 +1025,23 @@ while running:
     if fondo_elegido == 0 and sonic.x > 20000:
         print("¡Felicidades! Has completado el nivel 1.")
         volverabrir = 1
+        import vent_inicio
         running = False
+
     if fondo_elegido == 1 and sonic.x > 40000:
         print("¡Felicidades! Has completado el nivel 2.")
         volverabrir = 2
+        import vent_inicio
         running = False
     if fondo_elegido == 2 and sonic.x > 60000:
         print("¡Felicidades! Has completado el nivel 3.")
         volverabrir = 3
+        import vent_inicio
         running = False
     if fondo_elegido == 3 and sonic.x > 80000:
         print("¡Felicidades! Has completado el nivel 4.")
         volverabrir = 4
+        import vent_inicio
         running = False
 
 # ---------- Salir: cerrar Arduino si está abierto ----------
@@ -1041,11 +1052,3 @@ except Exception:
     pass
 
 pygame.quit()
-if volverabrir == 1:
-    import vent_inicio
-if volverabrir == 2:
-    import vent_inicio
-if volverabrir == 3:
-    import vent_inicio
-if volverabrir == 4:
-    import vent_inicio
