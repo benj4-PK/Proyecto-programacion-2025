@@ -4,7 +4,8 @@ import time
 import random
 import serial
 import config
-from variablesimage import baknik, baknik2, baknik3, avispa, avispa2, avispa3, avispa4, crab, crab2, crab3, pez, sol1, atardecer, luna, solnight, espinas, fondo_day, fondo_day2, fondo_midnight, fondo_midnight2, fondo_seminight, fondo_seminight2, fondo_night, fondo_night2, rings, sprite_sonic, sprite_muerte, sprite_damage, sprite_damage2, sprite_damage3, sprite_damage4, sprite_eu_bata, sol_world_x, sol_world_y, proyectil, roca1, roca2, roca3, anilloimagen, enemigoimagen
+import math
+from variablesimage import baknik, baknik2, baknik3, avispa, avispa2, avispa3, avispa4, crab, crab2, crab3, pez, sol1, atardecer, luna, solnight, espinas, fondo_day, fondo_day2, fondo_midnight, fondo_midnight2, fondo_seminight, fondo_seminight2, fondo_night, fondo_night2, rings, sprite_sonic, sprite_muerte, sprite_damage, sprite_damage2, sprite_damage3, sprite_damage4, sprite_eu_bata, sol_world_x, sol_world_y, proyectil, roca1, roca2, roca3, anilloimagen, enemigoimagen, eggman, eggman_attack, eggman_attack2
 from file2 import fondo_elegido
 from vent_inicio import menu_principal
 
@@ -106,18 +107,21 @@ ENEMY_ANIMATIONS = {
 
 ENEMY_FRAME_DURATION = 0.15
 
-
-
+largoS = 1200000
+apari = -10000
 sonic = pygame.Rect(700, 350 - HITBOX_H_STAND, HITBOX_W, HITBOX_H_STAND)
 
 if fondo_elegido == 2:
     suelo_y_default = 300
-    suelo = pygame.Rect(-10000, suelo_y_default, 120000, 100)
+    suelo = pygame.Rect(apari, suelo_y_default, largoS, 100)
 else:
     suelo_y_default = 320
-    suelo = pygame.Rect(-10000, suelo_y_default, 120000, 100)
+    suelo = pygame.Rect(apari, suelo_y_default, largoS, 100)
+
+
 
 invulnerable = False
+invulnerable2 = False
 invulnerability_timer = 0.0
 INVULNERABILITY_DURATION = 3.0
 vel_y = 0
@@ -191,7 +195,41 @@ frame_timer = 0.0
 frame_duracion = 0.08
 rocas_list = []
 rings_list = []
+# Variables de estado de Eggman (Jefe)
+vida = 45
+EGGMAN_START_X = 79400          # Posición inicial en el rango 78900-79900
+EGGMAN_Y_BOTTOM = 160           # Posición Y más baja (cerca del suelo)
+EGGMAN_MAX_FLOAT_Y = 60         # Posición Y más alta (el límite superior del movimiento vertical)
+EGGMAN_VEL_LATERAL = 250        # Velocidad lateral (pixels/seg)
+EGGMAN_VEL_VERTICAL = 100       # Velocidad vertical (pixels/seg)
+EGGMAN_BOUND_LEFT = 78900       # Límite izquierdo del área de jefe
+EGGMAN_BOUND_RIGHT = 79900      # Límite derecho del área de jefe
+EGGMAN_RECT_W = eggman.get_width() 
+EGGMAN_RECT_H = eggman.get_height()
 
+# Rectángulo inicial de Eggman (posición de MUNDO)
+HITBOX_OFFSET = 10              # 10 píxeles de margen en cada lado
+HITBOX_CUSTOM_W = 180           # 200 - (10 * 2) = 180
+HITBOX_CUSTOM_H = 180           # 200 - (10 * 2) = 180
+
+# Usar el ancho y alto del sprite original (200x200)
+EGGMAN_RECT_W = eggman.get_width() 
+EGGMAN_RECT_H = eggman.get_height()
+
+# Rectángulo inicial de Eggman (posición de MUNDO)
+# La hitbox de 180x180 se inicia desplazada 10 píxeles de la esquina (X + 10, Y + 10)
+
+if config.vidaC == 0:
+    eggman_rect = pygame.Rect(
+        EGGMAN_START_X + HITBOX_OFFSET, 
+        EGGMAN_Y_BOTTOM + HITBOX_OFFSET, 
+        HITBOX_CUSTOM_W, 
+        HITBOX_CUSTOM_H
+    )
+elif config.vidaC == 1:
+    eggman_rect = pygame.Rect(0,0,0,0)
+eggman_h_dir = 1 # Dirección horizontal: 1=derecha, -1=izquierda
+eggman_v_dir = -1 # Dirección vertical: 1=abajo, -1=arriba
 def generate_rings(num_rings):
     for _ in range(num_rings):
         x = random.randint(600, 78800)
@@ -329,11 +367,23 @@ def update_enemy(enemy_id, enemy_rect, dt):
         if enemy_rect.colliderect(suelo):  
             enemy_rect.bottom = suelo.y
             state['vel_y'] = 0
+    
+    # ----------------------------------------------------
+    # Lógica de Colisión con Pinchos (Retroceso/Rebote) ⬅️ MODIFICACIÓN APLICADA
     if enemy_rect.collidelist(espinas_rects) != -1:
-        # Colisión detectada: Invertir la dirección (vel_x)
-        state['vel_x'] *= -1
-        # Empujar ligeramente para asegurar que salga del hitbox de la púa
-        enemy_rect.x += state['vel_x'] * dt * 5
+        # 1. Invertir la dirección de la velocidad (para el movimiento futuro)
+        state['vel_x'] *= 1
+        
+        # 2. Aplicar un empujón de retroceso inmediato (15 píxeles)
+        # Si la nueva velocidad es positiva (moviéndose a la derecha):
+        if state['vel_x'] > 0:
+            # Mover temporalmente hacia la izquierda (alejarse del pincho)
+            enemy_rect.x -= 100
+        # Si la nueva velocidad es negativa (moviéndose a la izquierda):
+        else: 
+            # Mover temporalmente hacia la derecha (alejarse del pincho)
+            enemy_rect.x += 100
+    # ----------------------------------------------------
             
     state['frame_timer'] += dt
     if state['frame_timer'] >= ENEMY_FRAME_DURATION:
@@ -433,10 +483,14 @@ elif nueva_zona == 3:
             (77000, suelo_y_default+15),
             (78500, suelo_y_default+15-90),
             (78500, suelo_y_default+15),
-            (78800, suelo_y_default+15),
-            (79900, suelo_y_default+15)
+            (78800, suelo_y_default + 15),
+            (79900, suelo_y_default + 15)
+        
+            
             
     ]
+
+            
 # Ajustar la 'y' para que el dibujo y la colisión sean correctos
 # El sprite de espinas tiene una altura, y queremos que 'suelo_y_default' sea la parte inferior.
 # Obtener la altura de las espinas una sola vez
@@ -459,6 +513,8 @@ def handle_hit(hit_id, hit_list, estado, is_rock=False):
     # Si se está invulnerable, empujar a sonic y salir
     if invulnerable:
         sonic.x -= 100  if mirando_derecha else sonic.x + 100 # Retroceder un poco al ser golpeado
+    elif invulnerable2:
+        sonic.x -= 100  if mirando_derecha else sonic.x + 100 # Retroceder un poco al ser golpeado
 
     if estado in ["jump", "dash"] and not is_rock:
         contador_enemigos += 1
@@ -476,10 +532,10 @@ def handle_hit(hit_id, hit_list, estado, is_rock=False):
         if hit_id in rocas_estados:
             del rocas_estados[hit_id]
         # Continuar para ver si la roca causó daño o si Sonic era invulnerable
-        if invulnerable or dead:
+        if invulnerable or invulnerable2 or dead:
             return # No causa daño si es invulnerable
 
-    if invulnerable or dead:
+    if invulnerable or invulnerable2 or dead:
         return
 
     # Lógica de daño
@@ -559,6 +615,7 @@ while running:
         
         sprite_draw_x = sonic.x - camera_x
         sprite_draw_y = sonic.y - (SPRITE_H - sonic.height)
+
         
         screen.blit(sprite_muerte, (sprite_draw_x, sprite_draw_y)) 
         
@@ -671,7 +728,147 @@ while running:
             avispa_shoot_timers[avispa_id] = now
             
     # ---------------------------------------------------
+    # --- Lógica de Movimiento y Colisión de Eggman (Nivel 4) ---
+    if fondo_elegido == 3: # Solo activa el jefe en el Nivel 4
 
+        # 1. Movimiento Horizontal (Lateral)
+        # Actualizar posición en X
+        eggman_rect.x += EGGMAN_VEL_LATERAL * eggman_h_dir * dt
+        
+        # Comprobar límites laterales (78900 a 79900) y rebotar
+        if eggman_rect.right >= EGGMAN_BOUND_RIGHT:
+            eggman_h_dir = -1  # Cambiar a izquierda
+            eggman_rect.right = EGGMAN_BOUND_RIGHT
+        elif eggman_rect.left <= EGGMAN_BOUND_LEFT:
+            eggman_h_dir = 1   # Cambiar a derecha
+            eggman_rect.left = EGGMAN_BOUND_LEFT
+            
+        # 2. Movimiento Vertical (Arriba y Abajo)
+        # Actualizar posición en Y
+        eggman_rect.y += EGGMAN_VEL_VERTICAL * eggman_v_dir * dt
+        
+        # Comprobar límites verticales y rebotar
+        if eggman_rect.y >= EGGMAN_Y_BOTTOM:
+            eggman_v_dir = -1  # Cambiar a arriba
+            eggman_rect.y = EGGMAN_Y_BOTTOM # Asegurar que no traspase el límite inferior
+        elif eggman_rect.y <= EGGMAN_MAX_FLOAT_Y:
+            eggman_v_dir = 1   # Cambiar a abajo
+            eggman_rect.y = EGGMAN_MAX_FLOAT_Y # Asegurar que no traspase el límite superior
+            
+        # 3. Colisión Eggman con Sonic (¡IMPORTANTE!)
+        if sonic.colliderect(eggman_rect):
+            if invulnerable2 == True:
+                sonic.y = sonic.y
+                sonic.x = sonic.x
+                ring_count = ring_count
+                
+            # Si Sonic está atacando (saltando o dasheando)
+            if estado in ["jump", "dash"]:
+                vel_y = vel_salto / 2 # Sonic rebota hacia arriba
+                sonic.x = sonic.x -150 if mirando_derecha else sonic.x+150
+                vida = vida - 10
+                suelo.x = EGGMAN_BOUND_LEFT 
+                # El ancho es la diferencia entre el límite derecho e izquierdo
+                suelo.width = EGGMAN_BOUND_RIGHT - EGGMAN_BOUND_LEFT
+                if vida == 35:
+                    NUM_PROYECTILES = 4
+                    PROJECTILE_SPEED = 450 # Velocidad de dispersión (ajustable)
+                        
+                    center_x, center_y = eggman_rect.center
+                    
+                    # Generar proyectiles en 8 direcciones equidistantes
+                    for i in range(NUM_PROYECTILES):
+                        # Calcula el ángulo en radianes para 8 direcciones (0 a 2*pi)
+                        angle = (i / NUM_PROYECTILES) * 2 * math.pi 
+                        
+                        # Componentes de velocidad usando coseno (X) y seno (Y)
+                        vel_x = PROJECTILE_SPEED * math.cos(angle)
+                        vel_y_proj = PROJECTILE_SPEED * math.sin(angle)
+                        
+                        # Añadir a la lista de proyectiles existentes (se moverán y colisionarán automáticamente)
+                        proyectiles_avispa_list.append({
+                            'rect': pygame.Rect(center_x, center_y, proyectil.get_width(), proyectil.get_height()),
+                            'vel_x': vel_x, 
+                            'vel_y': vel_y_proj,
+                        })
+                if vida == 25:
+                    NUM_PROYECTILES = 4
+                    PROJECTILE_SPEED = 450 # Velocidad de dispersión (ajustable)
+                        
+                    center_x, center_y = eggman_rect.center
+                    
+                    # Generar proyectiles en 8 direcciones equidistantes
+                    for i in range(NUM_PROYECTILES):
+                        # Calcula el ángulo en radianes para 8 direcciones (0 a 2*pi)
+                        angle = (i / NUM_PROYECTILES) * 2 * math.pi 
+                        
+                        # Componentes de velocidad usando coseno (X) y seno (Y)
+                        vel_x = PROJECTILE_SPEED * math.cos(angle)
+                        vel_y_proj = PROJECTILE_SPEED * math.sin(angle)
+                        
+                        # Añadir a la lista de proyectiles existentes (se moverán y colisionarán automáticamente)
+                        proyectiles_avispa_list.append({
+                            'rect': pygame.Rect(center_x, center_y, proyectil.get_width(), proyectil.get_height()),
+                            'vel_x': vel_x, 
+                            'vel_y': vel_y_proj,
+                        })
+                if vida == 10:
+                    NUM_PROYECTILES = 4
+                    PROJECTILE_SPEED = 450 # Velocidad de dispersión (ajustable)
+                        
+                    center_x, center_y = eggman_rect.center
+                    
+                    # Generar proyectiles en 8 direcciones equidistantes
+                    for i in range(NUM_PROYECTILES):
+                        # Calcula el ángulo en radianes para 8 direcciones (0 a 2*pi)
+                        angle = (i / NUM_PROYECTILES) * 2 * math.pi 
+                        
+                        # Componentes de velocidad usando coseno (X) y seno (Y)
+                        vel_x = PROJECTILE_SPEED * math.cos(angle)
+                        vel_y_proj = PROJECTILE_SPEED * math.sin(angle)
+                        
+                        # Añadir a la lista de proyectiles existentes (se moverán y colisionarán automáticamente)
+                        proyectiles_avispa_list.append({
+                            'rect': pygame.Rect(center_x, center_y, proyectil.get_width(), proyectil.get_height()),
+                            'vel_x': vel_x, 
+                            'vel_y': vel_y_proj,
+                        })
+            # Si Sonic no está atacando, Eggman causa daño
+            elif invulnerable:
+                sonic.x = sonic.x - 80 if mirando_derecha else sonic.x + 80
+            elif invulnerable2:
+                sonic.x = sonic.x - 80 if mirando_derecha else sonic.x + 80
+            elif not invulnerable and not dead:
+                if ring_count > 0:
+                    print("¡Sonic fue golpeado por Eggman! Pierde rings.")
+                    ring_count = 0
+                    invulnerable = True
+                    invulnerability_timer = 0.0
+                    hurt = True
+                    hurt_timer = 0.0
+                    sonic.x = sonic.x - 100 if mirando_derecha else sonic.x + 100
+                else:
+                    print("¡Game Over! Sonic chocó con Eggman sin rings.")
+                    dead = True
+                    death_timer = 0.0
+                    # La lógica de música de muerte ya está en tu código, se activará con 'dead=True'
+    if vida == 20:
+        EGGMAN_VEL_LATERAL += 20
+        EGGMAN_VEL_VERTICAL += 15
+    elif vida == 10:
+        EGGMAN_VEL_LATERAL += 20
+        EGGMAN_VEL_VERTICAL += 15
+    elif vida == 3:
+        EGGMAN_VEL_LATERAL = 0
+        EGGMAN_VEL_VERTICAL = 0
+    
+    if sonic.y > 500:
+        if ring_count > 0:
+            ring_count = 0
+            sonic.x = 79000
+            sonic.y = 280
+        else:
+            dead = True
 
     keys = pygame.key.get_pressed()
     
@@ -955,6 +1152,21 @@ while running:
     screen.blit(fondo_actual, (fondo_x, 0))
     screen.blit(fondo_actual, (fondo_x - fondo_width, 0))
 
+    
+    if vida > 0:
+        eggman_draw_x = eggman_rect.x - camera_x
+        eggman_draw_y = eggman_rect.y
+        
+        # Dibujar a Eggman en su posición relativa a la cámara
+        screen.blit(eggman, (eggman_draw_x, eggman_draw_y))
+    elif vida <= 0:
+        suelo.x = -10000
+        suelo.width = 120000
+        eggman_rect.x = -5000 
+        eggman_rect.y = -5000
+        invulnerable2 == True
+    # Dibujar a Eggman en su posición relativa a la cámara
+    
     # 2. Dibujar el Sol/Luna (solo si estás en la zona 0)
     if nueva_zona == 0:
         # La posición en pantalla es la posición del mundo menos la cámara
@@ -976,6 +1188,8 @@ while running:
         if sonic.colliderect(espina_rect):
             # Lógica para manejar el daño ambiental (espinas)
             if invulnerable == True:
+                sonic.x = sonic.x - 100 if mirando_derecha else sonic.x + 100 # Retroceder un poco al ser golpeado
+            elif invulnerable2 == True:
                 sonic.x = sonic.x - 100 if mirando_derecha else sonic.x + 100 # Retroceder un poco al ser golpeado
             if not invulnerable and not dead:
                 if ring_count > 0:
@@ -1026,6 +1240,9 @@ while running:
     sprite_draw_x = sonic.x - camera_x - (SPRITE_W - sonic.width) // 10
     sprite_draw_y = sonic.y - (SPRITE_H - sonic.height)
 
+    
+        
+    
     if not mirando_derecha:
         imagen_actual = pygame.transform.flip(imagen_actual, True, False)
 
@@ -1134,22 +1351,22 @@ while running:
     clock.tick(30)
     volverabrir= 0
     # comprobaciones de final de nivel
-    if fondo_elegido == 0 and sonic.x > 20000:
+    if fondo_elegido == 0 and sonic.x > 20500:
         print("¡Felicidades! Has completado el nivel 1.")
         volverabrir = 1
         running = False
         menu_principal(volverabrir)
-    if fondo_elegido == 1 and sonic.x > 40000:
+    if fondo_elegido == 1 and sonic.x > 40500:
         print("¡Felicidades! Has completado el nivel 2.")
         volverabrir = 2
         running = False
         menu_principal(volverabrir)
-    if fondo_elegido == 2 and sonic.x > 60000:
+    if fondo_elegido == 2 and sonic.x > 60500:
         print("¡Felicidades! Has completado el nivel 3.")
         volverabrir = 3
         running = False
         menu_principal(volverabrir)
-    if fondo_elegido == 3 and sonic.x > 80000:
+    if fondo_elegido == 3 and sonic.x > 80500:
         print("¡Felicidades! Has completado el nivel 4.")
         volverabrir = 4
         running = False

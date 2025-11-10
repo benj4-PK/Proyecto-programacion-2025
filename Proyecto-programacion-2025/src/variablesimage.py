@@ -107,11 +107,11 @@ luna = pygame.transform.scale(luna, (120, 120))
 solnight = pygame.image.load("../sprites/seminoche.png")
 solnight = pygame.transform.scale(solnight, (120, 120))
 
-eggman = pygame.image.load("../sprites/Sprites_enemies/eggman.png")
-eggman = pygame.transform.scale(eggman, (250, 250))
+eggman = pygame.image.load("../sprites/sprite_mr.eggman/eggman.png")
+eggman = pygame.transform.scale(eggman, (200, 200))
 
-eggman_attack = pygame.image.load("../sprites/Sprites_enemies/eggman2.png")
-eggman_attack = pygame.transform.scale(eggman_attack, (250, 250))
+eggman_attack = pygame.image.load("../sprites/sprite_mr.eggman/eggman2.png")
+eggman_attack = pygame.transform.scale(eggman_attack, (200, 200))
 
-eggman_attack2 = pygame.image.load("../sprites/Sprites_enemies/eggman3.png")
-eggman_attack2 = pygame.transform.scale(eggman_attack2, (250, 250))
+eggman_attack2 = pygame.image.load("../sprites/sprite_mr.eggman/eggman3.png")
+eggman_attack2 = pygame.transform.scale(eggman_attack2, (200, 200))
