@@ -5,6 +5,10 @@ import pygame
 #sprites fondos y rings
 rings = pygame.image.load("../sprites/anillado2.png")
 rings = pygame.transform.scale(rings, (65, 65))
+anilloimagen = pygame.image.load("../sprites/anillado2.png")
+anilloimagen = pygame.transform.scale(anilloimagen, (35, 35))
+enemigoimagen = pygame.image.load("../sprites/Sprites_enemies/baknik.png")
+enemigoimagen = pygame.transform.scale(enemigoimagen, (35, 35))
 fondo_day = pygame.image.load("../sprites/day.jpg")
 fondo_day = pygame.transform.scale(fondo_day, (1200, 700))
 fondo_day2 = pygame.image.load("../sprites/day(sinsol).jpg")
@@ -103,12 +107,11 @@ luna = pygame.transform.scale(luna, (120, 120))
 solnight = pygame.image.load("../sprites/seminoche.png")
 solnight = pygame.transform.scale(solnight, (120, 120))
 
-#sprite jefe final
-#eggman = pygame.image.load("../sprites/Sprites_enemies/eggman.png")
-#eggman = pygame.transform.scale(eggman, (250, 250))
+eggman = pygame.image.load("../sprites/Sprites_enemies/eggman.png")
+eggman = pygame.transform.scale(eggman, (250, 250))
 
-#ggman_attack = pygame.image.load("../sprites/Sprites_enemies/eggman2.png")
-#eggman_attack = pygame.transform.scale(eggman_attack, (250, 250))
+eggman_attack = pygame.image.load("../sprites/Sprites_enemies/eggman2.png")
+eggman_attack = pygame.transform.scale(eggman_attack, (250, 250))
 
-#eggman_attack2 = pygame.image.load("../sprites/Sprites_enemies/eggman3.png")
-#eggman_attack2 = pygame.transform.scale(eggman_attack2, (250, 250))
+eggman_attack2 = pygame.image.load("../sprites/Sprites_enemies/eggman3.png")
+eggman_attack2 = pygame.transform.scale(eggman_attack2, (250, 250))

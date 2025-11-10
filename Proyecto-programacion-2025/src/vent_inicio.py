@@ -1,34 +1,40 @@
 import os
 import pygame
+import config
 
 # Inicializar aquí, pero la lógica principal en la función
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 pygame.init()
 
-# Variables que necesita file1 al importarse
-music_vol = 0.5 
+# Variablsssss que necesita file1 al importarse
+#music_vol = 0.5
+#sonidom = 4
 
 def menu_principal(start_level=0):
     """
     Muestra el menú principal y maneja las transiciones.
     'start_level' indica qué nivel se cargará al presionar JUGAR.
     """
-    global music_vol
+    #global music_vol
     
     # 1. SETUP DEL MENÚ
-    music_vol = 0.5 # Reinicia el volumen
+    
+    
     screen = pygame.display.set_mode((1200, 700))
     pygame.display.set_caption("Menu Principal")
 
     fondo = pygame.image.load("../sprites/fondo_menu.jpg")
     fondo = pygame.transform.scale(fondo, (1200, 700))
+    fondo2 = pygame.image.load("../sprites/menuprincipal.jpg")
+    fondo2 = pygame.transform.scale(fondo2, (1200, 700))
     clock = pygame.time.Clock()
     
     try:
         pygame.mixer.init()
         pygame.mixer.music.load("..\musica\music_menu.mp3")
-        pygame.mixer.music.set_volume(music_vol)
+        pygame.mixer.music.set_volume(config.Music_Volumen)
+        
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error cargando música del menú: {e}")
@@ -46,8 +52,11 @@ def menu_principal(start_level=0):
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 ejecutando = False
-
-        screen.blit(fondo, (0, 0))
+        if config.Idioma == 0:
+            fondo_actual = fondo
+        else:
+            fondo_actual = fondo2
+        screen.blit(fondo_actual, (0, 0))
 
         mouse_pos = pygame.mouse.get_pos()
         mouse_click = pygame.mouse.get_pressed()
@@ -85,22 +94,28 @@ def menu_principal(start_level=0):
                 elif next_action == "QUIT":
                     return 
 
-        # --- LÓGICA DEL SEGUNDO BOTÓN (inferior - asume que es un menú de opciones/NUEVO JUEGO) ---
+        # --- LÓGICA DEL SEGUNDO BOTÓN (inferior - asume que es un menú de opciones ---
         if X_BOTON <= mouse_pos[0] <= X_BOTON + ANCHO_BOTON and \
            Y_BOTON_NUEVO <= mouse_pos[1] <= Y_BOTON_NUEVO + ALTO_BOTON:
             if mouse_click[0] == 1:  # clic izquierdo
-                print("Iniciando Nuevo Juego (Nivel 1)") 
+                
                 pygame.mixer.music.stop()
                 ejecutando = False 
+                try:
+                    import file3 
+                except ImportError:
+                    print("Error: No se puede importar file1.py. Asegúrate de que existe.")
+                    pygame.quit()
+                    return
+                
                 # Si es un botón de Nuevo Juego, reiniciamos el flujo del menú desde el nivel 0
                 return menu_principal(0)
 
         pygame.display.flip()
         clock.tick(30)
-    
+        
     # Al salir del bucle (ejecutando = False)
-    pygame.quit()
-    
+    return    
 # --- Ejecución inicial ---
 if __name__ == "__main__":
     menu_principal(0) # Siempre comienza en el menú con el nivel 0 seleccionado

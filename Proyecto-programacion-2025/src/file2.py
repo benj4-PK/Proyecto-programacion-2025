@@ -1,13 +1,16 @@
 import os
 import pygame
-from vent_inicio import music_vol
-from vent_inicio2 import music_vol
+import config
+
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 pygame.init()
 fondo = pygame.image.load("../sprites/fondos.jpg")
 fondo = pygame.transform.scale(fondo, (1200, 700))
+fondo2 = pygame.image.load("../sprites/level.jpg")
+fondo2 = pygame.transform.scale(fondo2, (1200, 700))
+
 screen = pygame.display.set_mode((1200, 700))
 pygame.display.set_caption("Menu Principal")
 
@@ -26,7 +29,7 @@ pygame.mixer.music.load("..\musica\music_menu.mp3")
 pygame.mixer.music.play(-1)
 
 # Establecer un volumen inicial (por ejemplo, 50%)
-pygame.mixer.music.set_volume(music_vol)
+pygame.mixer.music.set_volume(config.Music_Volumen)
 
 
 # --- DEFINICIÓN DE BOTONES ---
@@ -96,7 +99,11 @@ while ejecutando:
                 ejecutando = False
 
     # Dibujar fondo y los botones como imagenes
-    screen.blit(fondo, (0, 0))
+    if config.Idioma == 0:
+        fondo_actual = fondo
+    else:
+        fondo_actual = fondo2
+    screen.blit(fondo_actual, (0, 0))
     screen.blit(imagen_analisis, imagen_rect)  # imagen usada como botón JUGAR
     screen.blit(imagen_nuevo, imagen_nuevo_rect)  # imagen midnight como botón NUEVO
     screen.blit(imagen_nuevo2, imagen_nuevo_rect2)  

@@ -3,10 +3,10 @@ import pygame
 import time
 import random
 import serial
-from vent_inicio import music_vol
-from vent_inicio2 import music_vol
-from variablesimage import baknik, baknik2, baknik3, avispa, avispa2, avispa3, avispa4, crab, crab2, crab3, pez, sol1, atardecer, luna, solnight, espinas, fondo_day, fondo_day2, fondo_midnight, fondo_midnight2, fondo_seminight, fondo_seminight2, fondo_night, fondo_night2, rings, sprite_sonic, sprite_muerte, sprite_damage, sprite_damage2, sprite_damage3, sprite_damage4, sprite_eu_bata, sol_world_x, sol_world_y, proyectil, roca1, roca2, roca3
+import config
+from variablesimage import baknik, baknik2, baknik3, avispa, avispa2, avispa3, avispa4, crab, crab2, crab3, pez, sol1, atardecer, luna, solnight, espinas, fondo_day, fondo_day2, fondo_midnight, fondo_midnight2, fondo_seminight, fondo_seminight2, fondo_night, fondo_night2, rings, sprite_sonic, sprite_muerte, sprite_damage, sprite_damage2, sprite_damage3, sprite_damage4, sprite_eu_bata, sol_world_x, sol_world_y, proyectil, roca1, roca2, roca3, anilloimagen, enemigoimagen
 from file2 import fondo_elegido
+from vent_inicio import menu_principal
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -73,11 +73,16 @@ try:
     music_path = os.path.join("..", "musica", "music_level.mp3")
     if os.path.exists(music_path):
         pygame.mixer.music.load(music_path)
-        vol = music_vol if 'music_vol' in globals() else 0.5
+        
+        # SOLUCIÓN: Usar la constante correcta y acceder a ella directamente
+        vol = config.MUSIC_VOLUME 
+        
         try:
+            # Asegurar que el volumen está en el rango [0.0, 1.0]
             pygame.mixer.music.set_volume(max(0.0, min(1.0, float(vol))))
         except Exception:
-            pygame.mixer.music.set_volume(0.5)
+            pygame.mixer.music.set_volume(0.5) # Fallback si hay un error
+            
         pygame.mixer.music.play(-1)
     else:
         print("Aviso: no se encontró música de nivel en:", music_path)
@@ -122,7 +127,7 @@ vel_lateral = 1000
 en_suelo = False
 cont_spindash = 0
 disminuir_spindash = 100
-
+contador_enemigos = 0
 # Variables para hacer las roquinhas
 rocas_estados = {} 
 roca_id_counter = 0 
@@ -191,7 +196,7 @@ def generate_rings(num_rings):
     for _ in range(num_rings):
         x = random.randint(600, 78800)
         y = random.randint(100, suelo_y_default - 50)
-        rings_list.append(pygame.Rect(x, y, 30, 30))
+        rings_list.append(pygame.Rect(x, y, 65, 65))
 
 
 
@@ -324,7 +329,11 @@ def update_enemy(enemy_id, enemy_rect, dt):
         if enemy_rect.colliderect(suelo):  
             enemy_rect.bottom = suelo.y
             state['vel_y'] = 0
-    
+    if enemy_rect.collidelist(espinas_rects) != -1:
+        # Colisión detectada: Invertir la dirección (vel_x)
+        state['vel_x'] *= -1
+        # Empujar ligeramente para asegurar que salga del hitbox de la púa
+        enemy_rect.x += state['vel_x'] * dt * 5
             
     state['frame_timer'] += dt
     if state['frame_timer'] >= ENEMY_FRAME_DURATION:
@@ -445,17 +454,20 @@ for x_world, y_world_base in espinas_positions:
     
 # Modificación de handle_hit para poder eliminar las rocas y que el código funcione tanto para rocas como para enemigos.
 def handle_hit(hit_id, hit_list, estado, is_rock=False): 
-    global ring_count, running, invulnerable, invulnerability_timer, dead, death_timer, hurt, hurt_timer, death_music_played, rocas_estados
+    global ring_count, running, invulnerable, invulnerability_timer, dead, death_timer, hurt, hurt_timer, death_music_played, rocas_estados, contador_enemigos
 
     # Si se está invulnerable, empujar a sonic y salir
     if invulnerable:
-        sonic.x -= 100  # Retroceder un poco al ser golpeado
+        sonic.x -= 100  if mirando_derecha else sonic.x + 100 # Retroceder un poco al ser golpeado
 
     if estado in ["jump", "dash"] and not is_rock:
+        contador_enemigos += 1
         # Si es un ataque válido (salto/dash) y NO es una roca (las rocas dañan, no se destruyen por golpe)
+        
         hit_list[:] = [hit for hit in hit_list if hit[0] != hit_id]
         if hit_id in enemy_states:
             del enemy_states[hit_id]
+        
         return
     
     # Si es una roca, SIEMPRE se elimina (ya sea que cause daño o no, desaparece al chocar)
@@ -519,7 +531,6 @@ if 'fondo_elegido' not in globals():
     fondo_elegido = 0
 if 'fondo_actual' not in globals():
     fondo_actual = fondo_day2
-
 while running:
     now = time.time()
     dt = now - last_time
@@ -536,8 +547,8 @@ while running:
         # 2. Procesar eventos (solo para poder cerrar la ventana manualmente)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                import vent_inicio
                 running = False
+                menu_principal(volverabrir)
             
         # 3. Dibujado en estado de muerte:
         # Recalcular fondo (necesario si la cámara se movió antes de morir)
@@ -965,7 +976,7 @@ while running:
         if sonic.colliderect(espina_rect):
             # Lógica para manejar el daño ambiental (espinas)
             if invulnerable == True:
-                sonic.x = sonic.x - 100  # Retroceder un poco al ser golpeado
+                sonic.x = sonic.x - 100 if mirando_derecha else sonic.x + 100 # Retroceder un poco al ser golpeado
             if not invulnerable and not dead:
                 if ring_count > 0:
                     print("¡Sonic fue golpeado por pínchos, Pierde rings.")
@@ -974,7 +985,7 @@ while running:
                     invulnerability_timer = 0.0
                     hurt = True
                     hurt_timer = 0.0
-                    sonic.x = sonic.x - 200  # Retroceder un poco al ser golpeado
+                    sonic.x = sonic.x - 200 if mirando_derecha else sonic.x +200  # Retroceder un poco al ser golpeado
                 else:
                     print("¡Game Over! Sonic tocó espinas sin rings.")
                     dead = True
@@ -1052,10 +1063,20 @@ while running:
                 rings_list.remove(ring)
                 if ring_count < 100:
                     ring_count += 1
-
-    ring_text = font.render(f'Rings: {ring_count}', True, (255, 255, 0))
-    screen.blit(ring_text, (50, 50))
-
+    if config.Idioma == 0:
+        ring_text = font.render(f'Anillos: {ring_count}', True, (255, 255, 0))
+        screen.blit(ring_text, (55, 32))
+        screen.blit(anilloimagen, (16, 27))
+        enemy_text = font.render(f'Enemigos: {contador_enemigos}', True, (255, 0, 0))
+        screen.blit(enemy_text, (55, 72))
+        screen.blit(enemigoimagen, (16, 67))
+    else:
+        ring_text = font.render(f'Rings: {ring_count}', True, (255, 255, 0))
+        screen.blit(ring_text, (55, 32))
+        screen.blit(anilloimagen, (16, 27))
+        enemy_text = font.render(f'Enemy: {contador_enemigos}', True, (255, 0, 0))
+        screen.blit(enemy_text, (55, 72))
+        screen.blit(enemigoimagen, (16, 67))
     for enemy_id, crab_rect in crabs_list[:]:
         update_enemy(enemy_id, crab_rect, dt)
         crab_draw_pos = (crab_rect.x - camera_x, crab_rect.y)
@@ -1116,24 +1137,23 @@ while running:
     if fondo_elegido == 0 and sonic.x > 20000:
         print("¡Felicidades! Has completado el nivel 1.")
         volverabrir = 1
-        import vent_inicio
         running = False
-
+        menu_principal(volverabrir)
     if fondo_elegido == 1 and sonic.x > 40000:
         print("¡Felicidades! Has completado el nivel 2.")
         volverabrir = 2
-        import vent_inicio
         running = False
+        menu_principal(volverabrir)
     if fondo_elegido == 2 and sonic.x > 60000:
         print("¡Felicidades! Has completado el nivel 3.")
         volverabrir = 3
-        import vent_inicio
         running = False
+        menu_principal(volverabrir)
     if fondo_elegido == 3 and sonic.x > 80000:
         print("¡Felicidades! Has completado el nivel 4.")
         volverabrir = 4
-        import vent_inicio
         running = False
+        menu_principal(volverabrir)
 
 # ---------- Salir: cerrar Arduino si está abierto ----------
 try:
