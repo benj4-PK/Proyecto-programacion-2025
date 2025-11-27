@@ -5,7 +5,13 @@ import config
 # Inicializar aquí, pero la lógica principal en la función
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-pygame.init()
+pygame.init() 
+
+
+
+
+
+
 
 # Variablsssss que necesita file1 al importarse
 #music_vol = 0.5

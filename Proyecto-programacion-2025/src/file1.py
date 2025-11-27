@@ -36,6 +36,7 @@ joystick_menu_btn = 1
 joystick_run_btn = 1
 umbral_movimiento = 100  # zona muerta para el joystick
 
+
 def leer_joystick():
     """Lee una línea del Arduino si hay datos disponibles y actualiza las variables globales."""
     global joystick_x, joystick_y, joystick_btn, joystick_menu_btn, joystick_run_btn
@@ -44,7 +45,7 @@ def leer_joystick():
     try:
         # Leer hasta una línea completa (con timeout)
         if arduino.in_waiting > 0:
-            arduino.reset_input_buffer()
+            
             linea = arduino.readline().decode('utf-8', errors='ignore').strip()
             if linea:
                 datos = linea.split(',')
@@ -766,7 +767,7 @@ while running:
             if estado in ["jump", "dash"]:
                 vel_y = vel_salto / 2 # Sonic rebota hacia arriba
                 sonic.x = sonic.x -150 if mirando_derecha else sonic.x+150
-                vida = vida - 10
+                vida = vida - 2
                 suelo.x = EGGMAN_BOUND_LEFT 
                 # El ancho es la diferencia entre el límite derecho e izquierdo
                 suelo.width = EGGMAN_BOUND_RIGHT - EGGMAN_BOUND_LEFT
